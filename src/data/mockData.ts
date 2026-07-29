@@ -30,7 +30,7 @@ export const INITIAL_MUSICIANS: Musician[] = [
     name: 'Rogério Marcos',
     role: 'Coordenação, violão e voz',
     initials: 'RM',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD91Syg_nNKmVdO6FNqQzifd6PPUJ6sTnvpV1q8D0wyjbD-Ad0VTp5y5uzNw5GexC2uiIqY2MTH4Kw7ulqOCI7zeWSelipnLzDh7JKjMdzq9YHtmwDM9hbd7xxQaIDhV6YuTRI_TltY6Y-yZtZjZXR5phbWeNoeor993AQgFO_k7Bu93tREyxRIgJ7mSYG9Bz7sseNwOqwSciEEizmSjCEaY3dJyqvfimUawpBDP7YRJVUAqH2WDvp8I4XkZJx4lZErZaVxtF_pwZ-J',
+    avatar: '/integrantes/rogerio.jpg',
     confirmed: true
   },
   {
@@ -38,7 +38,7 @@ export const INITIAL_MUSICIANS: Musician[] = [
     name: 'João Vítor',
     role: 'Violão, voz e arranjos',
     initials: 'JV',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDRlVVCTpCI6dToGV8l_C34Jrj0g3lTqgOp8Va86YLbZdB7UjiVgfWbEmUw6n0WOxNPXyo4HikDhiDtT2uXc47Gl5t8vzi2gCjKZpkX-_HwPrwXm-Pn_6u6Vw9vR3xZH0QJiLnBgSuXUaVeTPw-3sR3UOJxkRi76qdI3CXCiB6pOGLX4PAUErienLtRdzjDHYHTcvpY5dwCN1kWsxwnIH5qLHLUyTwO8IV8GK2ahA-FLMbAWuMxQCcAuhXmUrgxamJld2NczHeazjHF',
+    avatar: '/integrantes/joao.jpg',
     confirmed: true
   },
   {
@@ -46,7 +46,7 @@ export const INITIAL_MUSICIANS: Musician[] = [
     name: 'Ana Maria',
     role: 'Pré-coordenação, vocal solo e salmo',
     initials: 'AM',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuADYL5Z5EOImwC68frrAqi9_9IZ3SN9jCK38dBqhDNHgLfomLwm_BJc63lDoUBdb-73MlV0kdkU3sWm45FNlJ4-IZ_rspRvZxKbtJvtTKP1gyIO-PHUXhJ7UISIoh1MVjvbItoKQX2cc5a8woFuzBM3JR-ZqznfLAFNKWvrRX-_ApMblnMKMAKlVtfPbPMo7VjWW7aBNcnyNEtLWepYq-0MJkEJZ-JaQjWLbUKo4eENpsN9aQsDKovquaH_St3bFK60HBCH0wk2GNUH',
+    avatar: '/integrantes/ana.jpg',
     confirmed: true
   },
   {
@@ -54,6 +54,7 @@ export const INITIAL_MUSICIANS: Musician[] = [
     name: 'Lucas Creato',
     role: 'Teclado e contrabaixo',
     initials: 'LC',
+    avatar: '/integrantes/lucas.jpg',
     confirmed: true
   },
   {
@@ -61,6 +62,7 @@ export const INITIAL_MUSICIANS: Musician[] = [
     name: 'Edson Silva',
     role: 'Percussão leve e cajón',
     initials: 'ES',
+    avatar: '/integrantes/edson.jpg',
     confirmed: true
   },
   {
