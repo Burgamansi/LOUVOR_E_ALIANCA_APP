@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Source Sans 3', system-ui, sans-serif;
+
+  --color-background: #FFF9F2;
+  --color-surface: #FFF9F2;
+  --color-surface-dim: #F5E8D9;
+  --color-surface-bright: #FFFFFF;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low: #FFF9F2;
+  --color-surface-container: #F8ECE0;
+  --color-surface-container-high: #F2DEC9;
+  --color-surface-container-highest: #E8CFB8;
+  --color-surface-variant: #E8CFB8;
+  
+  --color-on-surface: #2D2118;
+  --color-on-surface-variant: #5C4A3E;
+  
+  --color-primary: #4D1721;
+  --color-primary-container: #7A2332;
+  --color-on-primary: #FFFFFF;
+  --color-on-primary-container: #FCE8EB;
+  --color-primary-fixed: #F8D5DA;
+  --color-primary-fixed-dim: #E8A3AC;
+  --color-on-primary-fixed: #300C13;
+
+  --color-secondary: #C9A24A;
+  --color-secondary-container: #F5E8C7;
+  --color-on-secondary-container: #5E4A1D;
+  --color-secondary-fixed: #F2E3B8;
+  --color-on-secondary-fixed: #3B2D0A;
+
+  --color-tertiary: #2D2118;
+  --color-tertiary-container: #423226;
+  --color-tertiary-fixed-dim: #D1C5B9;
+
+  --color-outline: #8C786B;
+  --color-outline-variant: #D9C8BC;
+  --color-error: #BA1A1A;
+  --color-on-error: #FFFFFF;
+}
+
+.parchment-glass {
+  background: rgba(255, 249, 242, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.font-headline-sm {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 600;
+}
+
+.font-headline-md {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+}
+
+.font-headline-lg {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+}
+
+.font-label-caps {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.font-display-serif {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

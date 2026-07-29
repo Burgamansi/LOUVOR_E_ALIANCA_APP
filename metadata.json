@@ -1,0 +1,6 @@
+{
+  "name": "Louvor & Aliança",
+  "description": "Aplicativo do Ministério Louvor & Aliança: Música, liturgia, celebração do amor cristão e comunhão a serviço da evangelização.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
