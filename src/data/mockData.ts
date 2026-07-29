@@ -2,13 +2,13 @@ import { Celebration, Musician, LiturgicalSong, Notice, ChatMessage, DriveFolder
 
 export const INITIAL_CELEBRATION: Celebration = {
   id: 'cel-1',
-  title: '17º Domingo do Tempo Comum — Celebração do Amor e Casais',
+  title: 'Missa das 9 Horas — Missão Louvor & Aliança',
   location: 'Santuário Paroquial Nossa Senhora da Aliança',
   dateStr: 'Domingo, 02 de Agosto',
-  timeStr: '19:00',
+  timeStr: '09:00',
   confirmed: true,
   season: 'Tempo Comum',
-  coverImage: 'https://images.unsplash.com/photo-1543807535-eceef0bc6599?q=80&w=1200&auto=format&fit=crop',
+  coverImage: '/capa-missa-9h.jpg',
   liturgicalColor: 'Verde',
   repertoireStatus: 'Completo',
   confirmedMusiciansCount: 5,

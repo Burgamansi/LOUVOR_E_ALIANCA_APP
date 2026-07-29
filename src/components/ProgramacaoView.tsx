@@ -97,45 +97,46 @@ export const ProgramacaoView: React.FC<ProgramacaoViewProps> = ({
         </div>
       )}
 
-      {/* HERO SECTION: PRÓXIMA CELEBRAÇÃO */}
-      <section className="relative overflow-hidden rounded-2xl bg-white border border-[#7A2332]/15 shadow-md">
-        {/* Cover Image Header with Dark Gradient Overlay */}
-        <div className="relative h-48 sm:h-64 w-full overflow-hidden">
+      {/* HERO SECTION: PRÓXIMA CELEBRAÇÃO & CAPA OFICIAL */}
+      <section className="relative overflow-hidden rounded-2xl bg-[#4D1721] border border-[#C9A24A]/30 shadow-xl">
+        {/* Cover Header Graphic Component */}
+        <div className="relative w-full overflow-hidden bg-[#1A050B]">
+          {/* Capa oficial da Missão Louvor & Aliança */}
           <img
-            src={celebration.coverImage || 'https://images.unsplash.com/photo-1543807535-eceef0bc6599?q=80&w=1200&auto=format&fit=crop'}
-            alt={celebration.title}
-            className="w-full h-full object-cover"
+            src={celebration.coverImage || '/capa-missa-9h.jpg'}
+            alt="Missa das 9 Horas — Missão Louvor & Aliança: Cantar é Orar Duas Vezes"
+            className="w-full h-auto block aspect-[1789/876] object-cover object-center"
+            loading="eager"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#4D1721] via-[#4D1721]/60 to-transparent" />
-          
-          {/* Liturgical Color & Season Badges */}
-          <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#2D2118]/80 text-[#FFF9F2] backdrop-blur-md border border-[#C9A24A]/40 shadow-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white/50" />
-              Liturgia: {celebration.liturgicalColor || 'Verde'}
-            </span>
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#7A2332]/90 text-white backdrop-blur-md border border-white/20">
-              <span className="material-symbols-outlined text-sm text-[#C9A24A]">auto_awesome</span>
-              {celebration.season || 'Tempo Comum'}
-            </span>
-          </div>
 
-          {/* Repertoire Status Badge */}
-          <div className="absolute top-4 right-4">
+          {/* Liturgical Status Badges sobre a capa */}
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex flex-wrap items-center justify-end gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-black/55 text-[#FFF9F2] backdrop-blur-md border border-[#C9A24A]/40 shadow-xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 border border-white/50" />
+              {celebration.liturgicalColor || 'Verde'} • {celebration.season || 'Tempo Comum'}
+            </span>
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#C9A24A] text-[#2D2118] shadow-sm">
               <span className="material-symbols-outlined text-sm">check_circle</span>
               Repertório {celebration.repertoireStatus || 'Completo'}
             </span>
           </div>
+        </div>
 
-          {/* Title on Hero Cover */}
-          <div className="absolute bottom-4 left-4 right-4 text-white">
-            <p className="text-xs uppercase tracking-widest text-[#C9A24A] font-semibold flex items-center gap-1 mb-1">
-              <span className="material-symbols-outlined text-sm">event</span> Próxima Celebração
-            </p>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold font-serif text-[#FFF9F2] leading-tight">
-              {celebration.title}
-            </h2>
+        {/* Musician Avatars Preview */}
+        <div className="flex items-center gap-2 bg-black/40 px-4 py-2.5 border-t border-[#C9A24A]/20 flex-wrap">
+          <span className="text-xs text-[#C9A24A] font-bold uppercase tracking-wider">
+            Músicos Escalados:
+          </span>
+          <div className="flex -space-x-2 overflow-hidden">
+            {musicians.slice(0, 5).map((m) => (
+              <img
+                key={m.id}
+                src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop'}
+                alt={m.name}
+                className="inline-block h-7 w-7 rounded-full ring-2 ring-[#C9A24A] object-cover"
+                title={`${m.name} (${m.role})`}
+              />
+            ))}
           </div>
         </div>
 
