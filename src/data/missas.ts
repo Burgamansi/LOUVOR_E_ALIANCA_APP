@@ -106,6 +106,67 @@ export const MISSAS: Missa[] = [
       A('pptx', '1mOvDYauyb_AFgvR3tAuC7Hth-45lMVuP', 'Projeção',         52629116),
     ],
   },
+  // ── Semana Santa e Tempo Pascal de 2025 ────────────────────────────────
+  // Páscoa em 20/04/2025. As datas vêm do calendário e, quando existe, do
+  // nome da pasta ou do arquivo.
+  {
+    slug: '2025-04-13-domingo-de-ramos', data: '2025-04-13', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Domingo de Ramos da Paixão do Senhor',
+    tituloExibicao: 'Domingo de Ramos da Paixão do Senhor',
+    cor: 'vermelho', status: 'publicada', local: LOCAL,
+    observacao: 'Três versões do mesmo roteiro em PDF (normal, "2tons" e "PDF-A") e duas do texto. Registrei a versão principal de cada.',
+    arquivos: [
+      A('pdf',  '1OCnh5PKrutQOznJnRNFjTQDELovLMCGs', 'Roteiro e cifras',   264833),
+      A('docx', '1L8rMct2QaLwWd3cn1tJrHYus6Ly5Ea1d', 'Texto de trabalho', 1147963),
+      A('pptx', '1TwdV-UqdOQCV3UU5mjOLPFM_-fBaG17X', 'Projeção',         57862834),
+    ],
+  },
+  {
+    slug: '2025-04-17-triduo-pascal', data: '2025-04-17', hora: '19:00', tipo: 'solenidade',
+    tituloLiturgico: 'Tríduo Pascal — Quinta e Sexta-feira Santa',
+    tituloExibicao: 'Vigília Eucarística — Quinta e Sexta-feira Santa',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Uma pasta só para os dois dias, como está no Drive. Sem projeção. Horário a confirmar.',
+    arquivos: [
+      A('pdf',  '1dHGf5C8yvcBU5JB7f8yCu-1ocfLfa5tk', 'Roteiro',            870925),
+      A('docx', '1swWsuRC_A5cP5QAgFgS7W8JZLPEr3wZh', 'Texto de trabalho', 1865435),
+    ],
+  },
+  {
+    slug: '2025-04-19-vigilia-pascal', data: '2025-04-19', hora: '19:00', tipo: 'solenidade',
+    tituloLiturgico: 'Vigília Pascal na Noite Santa',
+    tituloExibicao: 'Vigília Pascal — Sábado Santo',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Data confirmada pelo nome dos arquivos (19/04/2025). Horário a confirmar.',
+    arquivos: [
+      A('pdf',  '1N6b9eUn7REMUwTTZocSiLneGzu0so2Qb', 'Roteiro',            185199),
+      A('docx', '10OJCo0aoRPk3J7v-yCwttQDnkwCY-4au', 'Texto de trabalho',  108613),
+      A('pptx', '1I9WyQveGEXWXJuTOpbQwTlanY9ZIERYr', 'Projeção',         22158295),
+    ],
+  },
+  {
+    slug: '2025-05-04-3-domingo-pascoa', data: '2025-05-04', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '3º Domingo da Páscoa',
+    tituloExibicao: 'Missa das 9h — 3º Domingo da Páscoa',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'A pasta está guardada em "Abril" no Drive, mas a celebração é de maio — a data está no próprio nome.',
+    arquivos: [
+      A('pdf',  '1tBKF8l_HdzhsCTNYotwBRnRYAvDlarDb', 'Folheto',            189936),
+      A('docx', '1w9SvHn3meiUq2zrYJOQtq90wH6PytFmT', 'Texto de trabalho',  108739),
+      A('pptx', '1S6GjRklHlrxjUnxU6ORMUUacbPvyUdQn', 'Projeção',         42492986),
+    ],
+  },
+  {
+    slug: '2025-05-11-4-domingo-pascoa', data: '2025-05-11', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '4º Domingo da Páscoa — do Bom Pastor',
+    tituloExibicao: 'Missa das 9h — 4º Domingo da Páscoa',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Não tem pasta própria: o material de 11/05 está dentro da pasta do 3º Domingo, junto com o de 04/05. Sem projeção.',
+    arquivos: [
+      A('pdf',  '1LrFv3WsF3Zvnd2GBro1hKh3ox7-y0djD', 'Folheto',            218293),
+      A('docx', '1zEmTTZl5o7Hyzwqix2hMMb2tzRiaPshp', 'Texto de trabalho',  114260),
+    ],
+  },
   // ── Maio e julho de 2025 ───────────────────────────────────────────────
   {
     slug: '2025-05-18-5-domingo-pascoa', data: '2025-05-18', hora: '09:00', tipo: 'domingo',
