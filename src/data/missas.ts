@@ -38,6 +38,64 @@ const A = (tipo: TipoArquivoMissa, driveFileId: string, nomeExibicao: string, ta
 const LOCAL = 'Paróquia São Judas Tadeu — Americana/SP';
 
 export const MISSAS: Missa[] = [
+  // ── Agosto de 2025 ─────────────────────────────────────────────────────
+  // Não há 20º Domingo: a Solenidade da Assunção caiu no domingo 17/08 e o
+  // substituiu. Nenhuma celebração deste mês tem projeção no Drive.
+  {
+    slug: '2025-08-03-18-domingo-tempo-comum', data: '2025-08-03', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '18º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 18º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Sem projeção. A pasta guarda também o roteiro do 18º Domingo de 2026 ("– Ano A"), que entrou aqui por engano em 01/08/2026.',
+    arquivos: [
+      A('pdf',  '1JwIAoIWFw3E6KGECulns-LUtgPP_xgZi', 'Roteiro',            317510),
+      A('docx', '1MBOehAC__UrwdL_WfVanaGjF7qu0TAVm', 'Texto de trabalho',  196414),
+    ],
+  },
+  {
+    slug: '2025-08-10-19-domingo-tempo-comum', data: '2025-08-10', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '19º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 19º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Sem projeção no Drive — só roteiro e texto.',
+    arquivos: [
+      A('pdf',  '1llPawGKxP0Q_ye_vQV6gHDvqzkd4lha1', 'Roteiro',            247638),
+      A('docx', '1xPPwnAYzOiE78H-kTcy0kCXknQqEkiaB', 'Texto de trabalho',  199446),
+    ],
+  },
+  {
+    slug: '2025-08-17-assuncao-de-nossa-senhora', data: '2025-08-17', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Assunção de Nossa Senhora',
+    tituloExibicao: 'Solenidade da Assunção de Nossa Senhora',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Celebrada no domingo 17/08, no lugar do 20º Domingo do Tempo Comum. Sem projeção no Drive.',
+    arquivos: [
+      A('pdf',  '15oNL0naMf2TsZdnu_dqS0bkxkZoqxbwS', 'Roteiro',            324077),
+      A('docx', '1Ilk0bIN8XGxwrEDgc5CkhASYB9ibOYKT', 'Texto de trabalho',  195038),
+    ],
+  },
+  {
+    slug: '2025-08-24-21-domingo-tempo-comum', data: '2025-08-24', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '21º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 21º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Sem projeção. Roteiro e texto são os mesmos arquivos do 22º Domingo.',
+    arquivos: [
+      A('pdf',  '1h7X8TxSCSO8cnfJ914fMpKGXCm7ZlsTp', 'Roteiro',            319973),
+      A('docx', '1EmNx6zdCmMI96G3CdNtPaAqMrGzhOuT2', 'Texto de trabalho',  195238),
+    ],
+  },
+  {
+    slug: '2025-08-31-22-domingo-tempo-comum', data: '2025-08-31', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '22º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 22º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Sem projeção. Roteiro e texto são os mesmos arquivos do 21º Domingo.',
+    arquivos: [
+      A('pdf',  '1YvRJJAX5xaLUsyh8bwH_UR5BsmanGXrt', 'Roteiro',            319973),
+      A('docx', '1i4_iyntbukAYLH9Ull_QNeoNgoR6l7hC', 'Texto de trabalho',  195238),
+    ],
+  },
   // ── Setembro de 2025 ───────────────────────────────────────────────────
   // As projeções deste mês foram todas salvas em 04/10/2025, num arquivamento
   // em bloco — aqui a data de modificação não confirma a celebração, então as
