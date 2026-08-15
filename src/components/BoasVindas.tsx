@@ -78,8 +78,8 @@ export function BoasVindas({ aberto, onFechar, onIrPara, grupo, nomeGrupo }: Boa
         <div className="flex-1 overflow-y-auto px-5 py-5">
           {passo === 0 && (
             <div className="text-center flex flex-col items-center gap-3 py-4">
-              <div className="w-20 h-20 rounded-full bg-[#7A2332] flex items-center justify-center ring-2 ring-[#C9A24A] shadow-md">
-                <span aria-hidden className="material-symbols-outlined text-4xl text-[#C9A24A]">church</span>
+              <div className="w-20 h-20 rounded-full bg-[#4D1721] flex items-center justify-center ring-2 ring-[#C9A24A] shadow-md overflow-hidden">
+                <img src="/logo-la.png" alt="Louvor &amp; Aliança" className="w-[78%] h-[78%] object-contain" />
               </div>
               <div>
                 <p className="text-[11px] uppercase tracking-[0.2em] font-bold text-[#C9A24A]">

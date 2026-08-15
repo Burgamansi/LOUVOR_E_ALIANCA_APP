@@ -3,7 +3,7 @@ import { Celebration, Musician, LiturgicalSong, Notice, ChatMessage, DriveFolder
 export const INITIAL_CELEBRATION: Celebration = {
   id: 'cel-1',
   title: 'Missa das 9 Horas — Missão Louvor & Aliança',
-  location: 'Santuário Paroquial Nossa Senhora da Aliança',
+  location: 'Paróquia São Judas Tadeu — Americana/SP',
   dateStr: 'Domingo, 02 de Agosto',
   timeStr: '09:00',
   confirmed: true,
@@ -15,12 +15,12 @@ export const INITIAL_CELEBRATION: Celebration = {
   totalMusiciansCount: 5,
   pendencies: [
     'Ajustar tom do Salmo Responsorial com a salmista Ana',
-    'Testar microfone sem fio para os casais de acolhida'
+    'Testar microfone sem fio da equipe de acolhida'
   ],
   nextRehearsal: {
     dateStr: 'Quinta-feira, 30 de Julho',
     timeStr: '20:00',
-    location: 'Salão Paroquial do Louvor'
+    location: 'Salão Paroquial São Judas Tadeu'
   }
 };
 
@@ -339,25 +339,45 @@ Rogai por nós, Mãe de Deus Amor!`
 
 export const INITIAL_NOTICES: Notice[] = [
   {
-    id: 'notice-1',
-    dateStr: '28 Jul',
-    tag: 'Importante',
-    title: 'Encontro de Casais & Famílias no Domingo',
-    content: 'Caros irmãos do Louvor & Aliança, neste domingo a missa será dedicada aos casais da comunidade. Lembramos do ensaio geral na quinta-feira às 20h.',
-    authorName: 'Ana Maria',
-    authorRole: 'Coordenação',
-    authorAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuADYL5Z5EOImwC68frrAqi9_9IZ3SN9jCK38dBqhDNHgLfomLwm_BJc63lDoUBdb-73MlV0kdkU3sWm45FNlJ4-IZ_rspRvZxKbtJvtTKP1gyIO-PHUXhJ7UISIoh1MVjvbItoKQX2cc5a8woFuzBM3JR-ZqznfLAFNKWvrRX-_ApMblnMKMAKlVtfPbPMo7VjWW7aBNcnyNEtLWepYq-0MJkEJZ-JaQjWLbUKo4eENpsN9aQsDKovquaH_St3bFK60HBCH0wk2GNUH',
+    id: 'notice-assuncao',
+    dateStr: '15 Ago',
+    tag: 'Solenidade',
+    title: 'Assunção de Nossa Senhora — Solenidade de 15 de agosto',
+    content:
+      'Celebramos a Assunção da Virgem Maria, elevada em corpo e alma à glória do céu. ' +
+      'Nesta solenidade a paróquia terá missa festiva, e durante todo o mês de agosto o ' +
+      'repertório da Missa das 9h dá lugar de honra aos cantos marianos. O ministério ' +
+      'canta na missa solene — confirme sua presença na Programação.',
+    authorName: 'Pe. Cleiton',
+    authorRole: 'Pároco — São Judas Tadeu',
     isUrgent: true
   },
   {
-    id: 'notice-2',
-    dateStr: '25 Jul',
-    tag: 'Formação',
-    title: 'Pílula Litúrgica: O Sentido das Alianças',
-    content: 'Neste mês refletimos sobre a teologia da música na Celebração do Matrimônio e na união do casal cristão. Leitura sugerida no acervo da biblioteca.',
-    authorName: 'Rogério Marcos',
-    authorRole: 'Formação Litúrgica',
+    id: 'notice-missas',
+    dateStr: 'Agosto',
+    tag: 'Horários',
+    title: 'Missas do fim de semana na Paróquia São Judas Tadeu',
+    content:
+      'Sábado, às 19h: missa dominical antecipada. ' +
+      'Domingo, às 9h: Missa das 9h, animada pelo ministério Louvor & Aliança — ' +
+      'é a nossa missa, e a escala de cada domingo está na Programação. ' +
+      'Domingo, às 19h: missa vespertina. ' +
+      'Paróquia São Judas Tadeu, Americana/SP.',
+    authorName: 'Pe. Cleiton',
+    authorRole: 'Pároco — São Judas Tadeu',
     isStarred: true
+  },
+  {
+    id: 'notice-maria',
+    dateStr: 'Agosto',
+    tag: 'Formação',
+    title: 'Mês mariano: o que cantamos quando cantamos a Maria',
+    content:
+      'Durante agosto, a pílula litúrgica é sobre o canto mariano na liturgia — o lugar ' +
+      'certo de cada cântico e por que a Salve Rainha não substitui o canto de Comunhão. ' +
+      'Leitura sugerida no acervo da Biblioteca.',
+    authorName: 'Rogério Marcos',
+    authorRole: 'Formação Litúrgica'
   }
 ];
 
@@ -385,7 +405,7 @@ export const INITIAL_MESSAGES: ChatMessage[] = [
     content: 'Perfeito! Já preparei o timbre de cordas e piano acústico para o canto de Pós-Comunhão.',
     timeStr: '09:22',
     isMe: false,
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDRlVVCTpCI6dToGV8l_C34Jrj0g3lTqgOp8Va86YLbZdB7UjiVgfWbEmUw6n0WOxNPXyo4HikDhiDtT2uXc47Gl5t8vzi2gCjKZpkX-_HwPrwXm-Pn_6u6Vw9vR3xZH0QJiLnBgSuXUaVeTPw-3sR3UOJxkRi76qdI3CXCiB6pOGLX4PAUErienLtRdzjDHYHTcvpY5dwCN1kWsxwnIH5qLHLUyTwO8IV8GK2ahA-FLMbAWuMxQCcAuhXmUrgxamJld2NczHeazjHF'
+    avatar: '/integrantes/lucas.jpg'
   }
 ];
 
@@ -425,7 +445,7 @@ export const DRIVE_FOLDERS: DriveFolder[] = [
   {
     id: 'f5',
     title: 'Formação & Espiritualidade',
-    subtitle: 'Subsídios litúrgicos e estudo de casais',
+    subtitle: 'Subsídios litúrgicos e formação da equipe',
     fileCount: 38,
     iconName: 'church',
     colorClass: 'bg-[#C9A24A]/20 text-[#7A2332]'
@@ -446,7 +466,7 @@ export const DRIVE_EXTERNAL_LINKS: DriveExternalLink[] = [
     title: 'Liturgia Diária Oficial — CNBB',
     subtitle: 'Acompanhe as leituras, salmos e evangeliário diário.',
     badge: 'CNBB Oficial',
-    imageUrl: 'https://images.unsplash.com/photo-1509021436468-d510300e08f5?q=80&w=1200&auto=format&fit=crop',
+    imageUrl: '/capa-missa-9h.jpg',
     url: 'https://liturgia.cnbb.org.br/'
   },
   {
@@ -465,49 +485,76 @@ export const DRIVE_EXTERNAL_LINKS: DriveExternalLink[] = [
   }
 ];
 
+// Galeria: só material do próprio ministério.
+//
+// As quatro entradas anteriores eram fotos de banco de imagens — pessoas
+// desconhecidas ilustrando "encontro de casais" e "retiro". Numa galeria que se
+// chama Memórias, foto de estranho não é ilustração, é ruído: quem abre procura
+// reconhecer os irmãos da equipe.
+//
+// Para acrescentar fotos novas, ponha o arquivo em `public/galeria/` e crie uma
+// entrada aqui apontando para `/galeria/<arquivo>`.
 export const GALLERY_MEDIA: GalleryMediaItem[] = [
   {
-    id: 'gal-1',
-    title: 'Celebração de Casamentos e Famílias no Santuário',
-    category: 'Encontros de casais',
-    imageUrl: 'https://images.unsplash.com/photo-1543807535-eceef0bc6599?q=80&w=1200&auto=format&fit=crop',
+    id: 'gal-capa',
+    title: 'A Missa das 9h — Louvor & Aliança',
+    category: 'Nossa missa',
+    imageUrl: '/capa-missa-9h.jpg',
     type: 'image',
-    dateStr: 'Julho 2026',
-    description: 'Bênção das alianças e renovação dos votos matrimoniais com momentos de profundo louvor.'
+    dateStr: 'Todo domingo',
+    description: 'Mais que cantar, é servir. Mais que música, é oração. Mais que um grupo, é família.'
   },
   {
-    id: 'gal-2',
-    title: 'Ensaio Geral com Cânticos e Violões',
-    category: 'Ensaios e bastidores',
-    imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop',
-    type: 'video',
-    dateStr: 'Julho 2026',
-    description: 'Harmonização de vozes para o canto de Entrada no salão do Louvor & Aliança.'
+    id: 'gal-rogerio',
+    title: 'Rogério Marcos',
+    category: 'Nossa equipe',
+    imageUrl: '/integrantes/rogerio.jpg',
+    type: 'image',
+    dateStr: 'Coordenação',
+    description: 'Coordenação, violão e voz.'
   },
   {
-    id: 'gal-3',
-    title: 'Missa Jubilar do Ministério',
-    category: 'Nossa história',
-    imageUrl: 'https://images.unsplash.com/photo-1519817650390-64a93db51149?q=80&w=800&auto=format&fit=crop',
+    id: 'gal-ana',
+    title: 'Aninha',
+    category: 'Nossa equipe',
+    imageUrl: '/integrantes/ana.jpg',
     type: 'image',
-    dateStr: 'Junho 2026',
-    description: 'Celebração de 10 anos do projeto Louvor & Aliança a serviço da comunidade.'
+    dateStr: 'Vocal e salmo',
+    description: 'Pré-coordenação, vocal solo e salmo responsorial.'
   },
   {
-    id: 'gal-4',
-    title: 'Retiro Espiritual e Formação de Músicos',
-    category: 'Formação e espiritualidade',
-    imageUrl: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=800&auto=format&fit=crop',
+    id: 'gal-joao',
+    title: 'João Vítor',
+    category: 'Nossa equipe',
+    imageUrl: '/integrantes/joao.jpg',
     type: 'image',
-    dateStr: 'Maio 2026',
-    description: 'Dia de oração, escuta da Palavra e partilha espiritual da equipe.'
+    dateStr: 'Violão',
+    description: 'Violão, voz e arranjos.'
+  },
+  {
+    id: 'gal-lucas',
+    title: 'Lucas Creato',
+    category: 'Nossa equipe',
+    imageUrl: '/integrantes/lucas.jpg',
+    type: 'image',
+    dateStr: 'Teclado',
+    description: 'Teclado e contrabaixo.'
+  },
+  {
+    id: 'gal-edson',
+    title: 'Edson Silva',
+    category: 'Nossa equipe',
+    imageUrl: '/integrantes/edson.jpg',
+    type: 'image',
+    dateStr: 'Percussão',
+    description: 'Percussão leve e cajón.'
   }
 ];
 
 export const QUICK_DOWNLOADS: QuickDownloadFile[] = [
   {
     id: 'dl-1',
-    filename: 'Folheto_Missa_Casais_Agosto.pdf',
+    filename: 'Folheto_Assuncao_15Agosto.pdf',
     sizeStr: '4.2MB',
     timeAgo: 'Hoje',
     iconType: 'archive',
@@ -558,7 +605,7 @@ export const INITIAL_PAST_CELEBRATIONS: PastCelebration[] = [
     title: '16º Domingo do Tempo Comum — Missa dos Dizimistas',
     dateStr: '26 de Julho, 2026',
     timeStr: '19:00',
-    location: 'Santuário Nossa Senhora da Aliança',
+    location: 'Paróquia São Judas Tadeu — Americana/SP',
     season: 'Tempo Comum',
     liturgicalColor: 'Verde',
     musiciansCount: 5,

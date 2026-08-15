@@ -16,7 +16,7 @@ export const MidiaView: React.FC<MidiaViewProps> = ({
 
   const mediaList = galleryMedia && galleryMedia.length > 0 ? galleryMedia : GALLERY_MEDIA;
 
-  const parishEmblem = "https://lh3.googleusercontent.com/aida/AP1WRLuPTg0F5hA5eMgZDJOC20xBv0_QhQMxLRlQB0jwWIEcpgp5JLHb-AcVkn4_HW3jCRUSJfVvDpjin6BQgqq0invrxtXPsN8QrRWGz_iy1erD3yUaYKRwJSWMy0UFAwG5V7T0sud59A9JHNN9dyAFZ7j8SSWDgvKXWjF4tQd709ilQjO7pXVnG0DfERJF6Z-m5Tz3JEFCWm2w3u1ju5s9Y54TAUSnOYpv90wPeqA1zt9TL4_xdE0JUkVPFmjH";
+  const parishEmblem = "/logo-la.png";
 
   const handleDownload = (file: QuickDownloadFile) => {
     setDownloadToast(`Iniciando download de ${file.filename}...`);
@@ -64,7 +64,7 @@ export const MidiaView: React.FC<MidiaViewProps> = ({
             <div>
               <h3 className="font-serif text-lg text-[#7A2332] font-bold">Contribuir com o Acervo</h3>
               <p className="text-xs text-[#5C4A3E] max-w-xs mx-auto mt-1">
-                Compartilhe fotos e vídeos das celebrações, encontros de casais e momentos de comunhão do ministério.
+                Compartilhe fotos e vídeos das celebrações, dos ensaios e dos momentos de comunhão do ministério.
               </p>
             </div>
 
@@ -93,7 +93,7 @@ export const MidiaView: React.FC<MidiaViewProps> = ({
             <div
               key={item.id}
               onClick={() => setSelectedMedia(item)}
-              className="col-span-2 relative h-56 rounded-2xl overflow-hidden shadow-md group cursor-pointer border border-[#7A2332]/15"
+              className="col-span-2 relative h-56 sm:h-64 rounded-2xl overflow-hidden shadow-md group cursor-pointer border border-[#7A2332]/15"
             >
               <img
                 alt={item.title}
@@ -117,11 +117,11 @@ export const MidiaView: React.FC<MidiaViewProps> = ({
             <div
               key={item.id}
               onClick={() => setSelectedMedia(item)}
-              className="relative h-40 rounded-2xl overflow-hidden shadow-xs group cursor-pointer border border-[#7A2332]/15"
+              className="relative h-64 rounded-2xl overflow-hidden shadow-xs group cursor-pointer border border-[#7A2332]/15"
             >
               <img
                 alt={item.title}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover object-[center_25%] transition-transform duration-500 group-hover:scale-110"
                 src={item.imageUrl}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#4D1721]/80 to-transparent opacity-90"></div>

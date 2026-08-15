@@ -131,7 +131,7 @@ export const ProgramacaoView: React.FC<ProgramacaoViewProps> = ({
             {musicians.slice(0, 5).map((m) => (
               <img
                 key={m.id}
-                src={m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop'}
+                src={m.avatar || '/logo-la.png'}
                 alt={m.name}
                 className="inline-block h-7 w-7 rounded-full ring-2 ring-[#C9A24A] object-cover"
                 title={`${m.name} (${m.role})`}
