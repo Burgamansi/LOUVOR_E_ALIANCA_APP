@@ -35,8 +35,8 @@ export const ComunidadeView: React.FC<ComunidadeViewProps> = ({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const choirSingerAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuADYL5Z5EOImwC68frrAqi9_9IZ3SN9jCK38dBqhDNHgLfomLwm_BJc63lDoUBdb-73MlV0kdkU3sWm45FNlJ4-IZ_rspRvZxKbtJvtTKP1gyIO-PHUXhJ7UISIoh1MVjvbItoKQX2cc5a8woFuzBM3JR-ZqznfLAFNKWvrRX-_ApMblnMKMAKlVtfPbPMo7VjWW7aBNcnyNEtLWepYq-0MJkEJZ-JaQjWLbUKo4eENpsN9aQsDKovquaH_St3bFK60HBCH0wk2GNUH";
-  const organistAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuDRlVVCTpCI6dToGV8l_C34Jrj0g3lTqgOp8Va86YLbZdB7UjiVgfWbEmUw6n0WOxNPXyo4HikDhiDtT2uXc47Gl5t8vzi2gCjKZpkX-_HwPrwXm-Pn_6u6Vw9vR3xZH0QJiLnBgSuXUaVeTPw-3sR3UOJxkRi76qdI3CXCiB6pOGLX4PAUErienLtRdzjDHYHTcvpY5dwCN1kWsxwnIH5qLHLUyTwO8IV8GK2ahA-FLMbAWuMxQCcAuhXmUrgxamJld2NczHeazjHF";
+  const choirSingerAvatar = "/integrantes/ana.jpg";
+  const organistAvatar = "/integrantes/lucas.jpg";
 
   return (
     <div className="flex flex-col w-full pb-16 max-w-4xl mx-auto">

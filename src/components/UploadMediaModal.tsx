@@ -24,8 +24,8 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
     if (!title.trim()) return;
 
     const defaultImage = mediaType === 'video'
-      ? 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80'
-      : 'https://images.unsplash.com/photo-1548625361-18da90326463?auto=format&fit=crop&w=800&q=80';
+      ? '/capa-missa-9h.jpg'
+      : '/capa-missa-9h.jpg';
 
     const newMedia: GalleryMediaItem = {
       id: `gal-${Date.now()}`,

@@ -27,17 +27,25 @@ import { ModalPerfil } from './components/ModalPerfil';
 import type { PerfilMinisterio } from './components/ModalPerfil';
 
 import { NewNoticeModal } from './components/NewNoticeModal';
-import { AddChordModal } from './components/AddChordModal';
+import { ImportarCifraModal } from './components/ImportarCifraModal';
 import { UploadMediaModal } from './components/UploadMediaModal';
 import { NewPlaylistModal } from './components/NewPlaylistModal';
-
-// WhatsApp do ministério — é o número do botão flutuante e o da página
-// pública. No banco vive em config('whatsapp_ministerio'); enquanto o Turso não
-// responde, fica aqui. Trocar por um número real ativa o botão.
-const WHATSAPP_MINISTERIO = '';
+import { BoasVindas } from './components/BoasVindas';
+import { MINISTERIO, grupoConfigurado } from './lib/config';
+import { useLocal } from './hooks/useLocal';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('programacao');
+
+  // Modo de palco recolhe cabeçalho, menu lateral e navegação: no palco a tela
+  // inteira é da cifra, e qualquer coisa a mais é uma chance de tocar errado.
+  const [modoPalco, setModoPalco] = useState(false);
+
+  // Boas-vindas só no primeiro acesso deste aparelho. Depois disso, o mesmo
+  // conteúdo continua acessível em Mais → Como usar o app.
+  const [jaViuOnboarding, setJaViuOnboarding] = useLocal('la:onboarding-visto', false);
+  const [ajudaAberta, setAjudaAberta] = useState(false);
+  const grupoWhatsApp = grupoConfigurado();
 
   const [perfil, setPerfil] = useState<PerfilMinisterio>({
     nome: 'Ana Maria',
@@ -63,7 +71,8 @@ export default function App() {
 
   // Modal Controllers
   const [isNewNoticeOpen, setIsNewNoticeOpen] = useState<boolean>(false);
-  const [isAddChordOpen, setIsAddChordOpen] = useState<boolean>(false);
+  const [isImportarCifraOpen, setIsImportarCifraOpen] = useState<boolean>(false);
+  const [cifraEmEdicao, setCifraEmEdicao] = useState<LiturgicalSong | null>(null);
   const [isUploadMediaOpen, setIsUploadMediaOpen] = useState<boolean>(false);
   const [isNewPlaylistOpen, setIsNewPlaylistOpen] = useState<boolean>(false);
 
@@ -127,11 +136,18 @@ export default function App() {
     setNotices(prev => [notice, ...prev]);
   };
 
-  // Add new song/chord
-  const handleAddSong = (song: LiturgicalSong) => {
-    setSongs(prev => [...prev, song]);
+  // Grava a cifra importada: substitui quando o id já existe, senão acrescenta.
+  // É o mesmo caminho para "importar nova" e "corrigir esta" — uma cifra só por
+  // música, sem cópia divergindo do original.
+  const handleSalvarCifra = (song: LiturgicalSong) => {
+    setSongs((prev) =>
+      prev.some((s) => s.id === song.id)
+        ? prev.map((s) => (s.id === song.id ? song : s))
+        : [...prev, song]
+    );
     setSelectedSong(song);
     setCurrentTab('cifras');
+    setCifraEmEdicao(null);
   };
 
   // Add new media item
@@ -170,23 +186,33 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#fff8f4] text-[#261908] font-sans antialiased flex flex-col">
-      {/* Top Header Bar */}
-      <Header
-        currentTab={currentTab}
-        onTabChange={setCurrentTab}
-        title={getTabTitle()}
-      />
+      {/* No palco, tudo o que não é cifra sai da tela. */}
+      {!modoPalco && (
+        <>
+          <Header
+            currentTab={currentTab}
+            onTabChange={setCurrentTab}
+            title={getTabTitle()}
+            onAbrirAjuda={() => setAjudaAberta(true)}
+          />
 
-      {/* Desktop Sidebar Navigation */}
-      <Sidebar
-        currentTab={currentTab}
-        onTabChange={setCurrentTab}
-        perfil={perfil}
-        onAbrirPerfil={() => setIsPerfilOpen(true)}
-      />
+          <Sidebar
+            currentTab={currentTab}
+            onTabChange={setCurrentTab}
+            perfil={perfil}
+            onAbrirPerfil={() => setIsPerfilOpen(true)}
+            grupo={grupoWhatsApp}
+            nomeGrupo={MINISTERIO.nomeGrupo}
+            onAbrirAjuda={() => setAjudaAberta(true)}
+          />
+        </>
+      )}
 
-      {/* Main Content Area */}
-      <main className="flex-1 pt-20 pb-24 md:pb-8 md:pl-[280px] min-h-screen bg-[#fff8f4]">
+      <main
+        className={`flex-1 min-h-screen bg-[#fff8f4] ${
+          modoPalco ? 'pt-0 pb-8' : 'pt-20 pb-24 md:pb-8 md:pl-[280px]'
+        }`}
+      >
         {currentTab === 'programacao' && (
           <ProgramacaoView
             celebration={celebration}
@@ -219,7 +245,9 @@ export default function App() {
             selectedSong={selectedSong}
             onSelectSong={setSelectedSong}
             onOpenDrive={() => setCurrentTab('drive')}
-            onOpenAddChordModal={() => setIsAddChordOpen(true)}
+            onImportarCifra={() => { setCifraEmEdicao(null); setIsImportarCifraOpen(true); }}
+            onSubstituirCifra={(musica) => { setCifraEmEdicao(musica); setIsImportarCifraOpen(true); }}
+            onModoPalco={setModoPalco}
           />
         )}
 
@@ -249,14 +277,35 @@ export default function App() {
         )}
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <BottomNav
-        currentTab={currentTab}
-        onTabChange={setCurrentTab}
-      />
+      {!modoPalco && (
+        <BottomNav
+          currentTab={currentTab}
+          onTabChange={setCurrentTab}
+          grupo={grupoWhatsApp}
+          nomeGrupo={MINISTERIO.nomeGrupo}
+          onAbrirAjuda={() => setAjudaAberta(true)}
+        />
+      )}
 
-      {/* Botão flutuante do WhatsApp — some sozinho se não houver número */}
-      <BotaoWhatsAppFlutuante e164={WHATSAPP_MINISTERIO || perfil.whatsappE164} />
+      {/* Botão flutuante do WhatsApp — some sozinho se não houver número nem
+          grupo. Fica fora das Cifras: ali embaixo mora o controle de rolagem, e
+          dois botões flutuantes disputando o mesmo canto é um toque errado
+          esperando para acontecer. */}
+      {currentTab !== 'cifras' && (
+        <BotaoWhatsAppFlutuante
+          e164={MINISTERIO.whatsappE164 || perfil.whatsappE164}
+          grupo={grupoWhatsApp}
+          nomeGrupo={MINISTERIO.nomeGrupo}
+        />
+      )}
+
+      <BoasVindas
+        aberto={ajudaAberta || !jaViuOnboarding}
+        onFechar={() => { setAjudaAberta(false); setJaViuOnboarding(true); }}
+        onIrPara={setCurrentTab}
+        grupo={grupoWhatsApp}
+        nomeGrupo={MINISTERIO.nomeGrupo}
+      />
 
       {/* Modals */}
       <ModalPerfil
@@ -272,10 +321,12 @@ export default function App() {
         onAddNotice={handleAddNotice}
       />
 
-      <AddChordModal
-        isOpen={isAddChordOpen}
-        onClose={() => setIsAddChordOpen(false)}
-        onAddSong={handleAddSong}
+      <ImportarCifraModal
+        aberto={isImportarCifraOpen}
+        onFechar={() => { setIsImportarCifraOpen(false); setCifraEmEdicao(null); }}
+        onSalvar={handleSalvarCifra}
+        musicaExistente={cifraEmEdicao}
+        proximoNumero={songs.length + 1}
       />
 
       <UploadMediaModal

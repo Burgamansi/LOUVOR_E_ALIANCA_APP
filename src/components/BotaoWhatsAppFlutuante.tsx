@@ -1,27 +1,42 @@
 import { useState } from 'react';
-import { linkWhatsApp, formatarBR } from '../lib/whatsapp';
+import { linkWhatsApp, linkGrupoWhatsApp, formatarBR } from '../lib/whatsapp';
 
 interface BotaoWhatsAppFlutuanteProps {
   /** Número do ministério em E.164. Vem de config('whatsapp_ministerio'). */
   e164?: string | null;
+  /** Convite do grupo da equipe: URL do chat.whatsapp.com ou só o código. */
+  grupo?: string | null;
+  nomeGrupo?: string;
   mensagemPadrao?: string;
 }
 
 /**
  * Botão flutuante do WhatsApp.
  *
- * Fica acima da barra de navegação no celular (`bottom-20`) para não cobrir o
- * menu. Abre um cartão com os assuntos mais comuns em vez de mandar a pessoa
- * para uma conversa em branco — quem chega numa conversa vazia costuma desistir
- * antes de escrever.
+ * Duas coisas diferentes moram aqui, e a ordem importa:
+ *
+ *  · **entrar no grupo da equipe** — para quem já é do ministério. É a ação
+ *    mais frequente e por isso vem primeiro, destacada, com o nome do grupo à
+ *    vista para ninguém achar que vai cair numa conversa com um desconhecido;
+ *  · **falar com o ministério** — para quem chegou de fora e quer participar,
+ *    sugerir música ou tirar dúvida da missa.
+ *
+ * Cada assunto já leva a mensagem escrita: quem cai numa conversa em branco
+ * costuma fechar antes de digitar.
+ *
+ * O botão some sozinho se não houver nem número nem grupo configurado — melhor
+ * ausente do que levando a equipe para uma página de convite expirado.
  */
 export function BotaoWhatsAppFlutuante({
   e164,
+  grupo,
+  nomeGrupo = 'Grupo da equipe',
   mensagemPadrao = 'Olá! Vim pelo app do Louvor & Aliança.',
 }: BotaoWhatsAppFlutuanteProps) {
   const [aberto, setAberto] = useState(false);
 
-  if (!e164) return null;
+  const linkDoGrupo = linkGrupoWhatsApp(grupo);
+  if (!e164 && !linkDoGrupo) return null;
 
   const assuntos = [
     { rotulo: 'Quero cantar no ministério', icone: 'music_note',
@@ -44,50 +59,82 @@ export function BotaoWhatsAppFlutuante({
 
       <div className="fixed right-4 bottom-20 md:bottom-6 z-50 flex flex-col items-end gap-2">
         {aberto && (
-          <div className="w-72 bg-white rounded-2xl shadow-2xl border border-[#7A2332]/15 overflow-hidden animate-in">
+          <div className="w-72 bg-white rounded-2xl shadow-2xl border border-[#7A2332]/15 overflow-hidden">
             <div className="px-4 py-3 bg-[#25D366] text-white">
-              <p className="font-serif font-bold text-sm">Falar com o ministério</p>
-              <p className="text-[11px] opacity-90">{formatarBR(e164)}</p>
+              <p className="font-serif font-bold text-sm">Louvor &amp; Aliança no WhatsApp</p>
+              {e164 && <p className="text-[11px] opacity-90">{formatarBR(e164)}</p>}
             </div>
+
             <ul className="p-2 flex flex-col gap-1">
-              {assuntos.map((a) => (
-                <li key={a.rotulo}>
+              {linkDoGrupo && (
+                <li>
                   <a
-                    href={linkWhatsApp(e164, a.texto)}
+                    href={linkDoGrupo}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setAberto(false)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-[#2D2118] hover:bg-[#FFF9F2] transition"
+                    className="flex items-center gap-2.5 px-3 py-3 rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 text-sm font-bold text-[#128C7E] hover:bg-[#25D366]/20 transition"
                   >
-                    <span className="material-symbols-outlined text-[#7A2332] text-lg">{a.icone}</span>
-                    {a.rotulo}
+                    <span aria-hidden className="material-symbols-outlined text-lg">group_add</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block">Entrar no grupo da equipe</span>
+                      <span className="block text-[11px] font-normal text-[#5C4A3E] truncate">
+                        {nomeGrupo}
+                      </span>
+                    </span>
                   </a>
                 </li>
-              ))}
-              <li className="border-t border-[#7A2332]/10 mt-1 pt-1">
-                <a
-                  href={linkWhatsApp(e164, mensagemPadrao)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setAberto(false)}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-[#5C4A3E] hover:bg-[#FFF9F2] transition"
-                >
-                  <span className="material-symbols-outlined text-lg">chat</span>
-                  Outro assunto
-                </a>
-              </li>
+              )}
+
+              {e164 && (
+                <>
+                  {linkDoGrupo && (
+                    <li className="px-3 pt-2 pb-0.5">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#5C4A3E]">
+                        Falar com a coordenação
+                      </span>
+                    </li>
+                  )}
+                  {assuntos.map((a) => (
+                    <li key={a.rotulo}>
+                      <a
+                        href={linkWhatsApp(e164, a.texto)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setAberto(false)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-[#2D2118] hover:bg-[#FFF9F2] transition"
+                      >
+                        <span aria-hidden className="material-symbols-outlined text-[#7A2332] text-lg">{a.icone}</span>
+                        {a.rotulo}
+                      </a>
+                    </li>
+                  ))}
+                  <li className="border-t border-[#7A2332]/10 mt-1 pt-1">
+                    <a
+                      href={linkWhatsApp(e164, mensagemPadrao)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setAberto(false)}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-[#5C4A3E] hover:bg-[#FFF9F2] transition"
+                    >
+                      <span aria-hidden className="material-symbols-outlined text-lg">chat</span>
+                      Outro assunto
+                    </a>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
         )}
 
         <button
           onClick={() => setAberto(!aberto)}
-          aria-label={aberto ? 'Fechar contato do WhatsApp' : 'Falar no WhatsApp'}
+          aria-label={aberto ? 'Fechar contato do WhatsApp' : 'Abrir WhatsApp do ministério'}
           aria-expanded={aberto}
           className="w-14 h-14 rounded-full bg-[#25D366] text-white shadow-lg shadow-black/20 flex items-center justify-center hover:brightness-95 active:scale-95 transition cursor-pointer"
         >
           {aberto
-            ? <span className="material-symbols-outlined text-2xl">close</span>
+            ? <span aria-hidden className="material-symbols-outlined text-2xl">close</span>
             : <IconeZap className="w-7 h-7" />}
         </button>
       </div>

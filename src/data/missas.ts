@@ -35,7 +35,7 @@ export interface Missa {
 const A = (tipo: TipoArquivoMissa, driveFileId: string, nomeExibicao: string, tamanhoBytes: number): ArquivoMissa =>
   ({ tipo, driveFileId, nomeExibicao, tamanhoBytes });
 
-const LOCAL = 'Paróquia Nossa Senhora de Fátima';
+const LOCAL = 'Paróquia São Judas Tadeu — Americana/SP';
 
 export const MISSAS: Missa[] = [
   {

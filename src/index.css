@@ -90,3 +90,26 @@
   scrollbar-width: none;
 }
 
+
+/* Ícones (Material Symbols).
+ *
+ * A fonte vem do Google e a interface inteira depende dela: cada ícone é a
+ * ligadura de uma palavra ("play_arrow", "event_note"). Enquanto a fonte não
+ * chega — rede ruim no salão paroquial, primeiro acesso pelo 4G — o navegador
+ * desenha a PALAVRA, que ocupa cinco vezes a largura do ícone e empurra a barra
+ * de controles por cima do vizinho.
+ *
+ * Reservar a caixa de 1em resolve o layout: o glifo do Material Symbols é
+ * desenhado para caber exatamente nessa medida, então nada é cortado quando a
+ * fonte carrega, e o texto da ligadura fica confinado se ela nunca carregar.
+ */
+.material-symbols-outlined {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  overflow: hidden;
+  line-height: 1;
+  flex-shrink: 0;
+}
