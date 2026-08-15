@@ -38,6 +38,55 @@ const A = (tipo: TipoArquivoMissa, driveFileId: string, nomeExibicao: string, ta
 const LOCAL = 'Paróquia São Judas Tadeu — Americana/SP';
 
 export const MISSAS: Missa[] = [
+  // ── Setembro de 2025 ───────────────────────────────────────────────────
+  // As projeções deste mês foram todas salvas em 04/10/2025, num arquivamento
+  // em bloco — aqui a data de modificação não confirma a celebração, então as
+  // datas vêm só do calendário litúrgico.
+  {
+    slug: '2025-09-07-23-domingo-tempo-comum', data: '2025-09-07', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '23º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 23º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    arquivos: [
+      A('pdf',  '1rmqFmlCoMfz5LwNT_SK4f8r3zChzyzUS', 'Roteiro',            356540),
+      A('docx', '1RkIMM-XZrrkdjYaBIaI4FhmcG19cukVO', 'Texto de trabalho',  208130),
+      A('pptx', '1gcDxGfJ9TdXO2bZcxFscZ1M2_NMPHuAX', 'Projeção',         36495188),
+    ],
+  },
+  {
+    slug: '2025-09-14-exaltacao-da-santa-cruz', data: '2025-09-14', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Exaltação da Santa Cruz',
+    tituloExibicao: 'Festa da Exaltação da Santa Cruz',
+    cor: 'vermelho', status: 'publicada', local: LOCAL,
+    arquivos: [
+      A('pdf',  '1xljwoDTgT7ty3ZGsxY2_dhf6F0-k21a-', 'Roteiro',            290897),
+      A('docx', '10TU5Yo4BNkXg-QYziBETygVnGsn0bJyP', 'Texto de trabalho',  110319),
+      A('pptx', '1pFMWdkYIBUS4uLfTv5kMwfGihZEcZxsq', 'Projeção',         33741953),
+    ],
+  },
+  {
+    slug: '2025-09-21-25-domingo-tempo-comum', data: '2025-09-21', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '25º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 25º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'A pasta guarda lixo do Office: dois arquivos de bloqueio "~$" e um "pptE761.tmp" de 34 MB. Podem ser apagados sem perda.',
+    arquivos: [
+      A('pdf',  '1dmaqT1LWt2em5OwZ8AT8zrBB0KsNmr6h', 'Roteiro',            415459),
+      A('docx', '1hkMKynbQzyYgK-y5PQXkUfp6lSd6pKcG', 'Texto de trabalho',  287959),
+      A('pptx', '1TLqwm2jnex8dC5ndkbgD6rQAahIdVVX9', 'Projeção',         32958931),
+    ],
+  },
+  {
+    slug: '2025-09-28-26-domingo-sao-judas-tadeu', data: '2025-09-28', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: '26º Domingo do Tempo Comum — Missa de São Judas Tadeu',
+    tituloExibicao: 'Missa de São Judas Tadeu — 26º Domingo do Tempo Comum',
+    cor: 'vermelho', status: 'publicada', local: LOCAL,
+    observacao: 'Sem roteiro em PDF no Drive. A pasta guarda também um arquivo de bloqueio "~$" e um "pptDF1D.tmp" de 29 MB, que podem ser apagados.',
+    arquivos: [
+      A('docx', '139TepYLLHAGRls6H9ACZJ9J6npf3l7zp', 'Texto de trabalho',  361116),
+      A('pptx', '1d8q97Jfl1iLjjiBYNSr_z2eAwgmq7Lfh', 'Projeção',         29199493),
+    ],
+  },
   // ── Outubro de 2025 — mês do padroeiro ─────────────────────────────────
   {
     slug: '2025-10-05-27-domingo-tempo-comum', data: '2025-10-05', hora: '09:00', tipo: 'domingo',
