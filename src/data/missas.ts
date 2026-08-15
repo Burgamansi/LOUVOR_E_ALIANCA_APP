@@ -153,6 +153,29 @@ export const MISSAS: Missa[] = [
       A('pptx', '1F9j6m89nY4OdlJT0qp3bpUrPyKQFNLnw', 'Projeção',         32059040),
     ],
   },
+  // ── Fevereiro e março de 2025 ──────────────────────────────────────────
+  {
+    slug: '2025-02-02-apresentacao-do-senhor', data: '2025-02-02', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Apresentação do Senhor',
+    tituloExibicao: 'Festa da Apresentação do Senhor',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Data no nome dos arquivos. Guardada dentro de MISSAS_2025 › Fevereiro › FEVEREIRO-2025.',
+    arquivos: [
+      A('pdf',  '1SBORrhDmVwzaVn46dEVnFiO9t4dM1KYd', 'Roteiro',            360725),
+      A('docx', '1h7rbZkwAiaWehYbWFRDdkFwbo_YEZp-t', 'Texto de trabalho',  353087),
+      A('pptx', '1YplYKxAJ3g5vDg5zm9uiXGCqPkYdKM58', 'Projeção',         31856727),
+    ],
+  },
+  {
+    slug: '2025-03-09-1-domingo-quaresma', data: '2025-03-09', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '1º Domingo da Quaresma',
+    tituloExibicao: 'Missa das 9h — 1º Domingo da Quaresma',
+    cor: 'roxo', status: 'publicada', local: LOCAL,
+    observacao: 'Única celebração da Quaresma de 2025 no acervo, guardada na pasta de fevereiro. ATENÇÃO: o texto e a projeção desta pasta foram modificados em fevereiro de 2026 — são os arquivos da Quaresma de 2026, gravados por cima. Só o roteiro em PDF ainda é o de 2025.',
+    arquivos: [
+      A('pdf',  '1_3ELZOEhcXSUXVTqC9C67fYxgafiYiPp', 'Roteiro',            301451),
+    ],
+  },
   // ── Semana Santa e Tempo Pascal de 2025 ────────────────────────────────
   // Páscoa em 20/04/2025. As datas vêm do calendário e, quando existe, do
   // nome da pasta ou do arquivo.
