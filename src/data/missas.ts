@@ -106,6 +106,42 @@ export const MISSAS: Missa[] = [
       A('pptx', '1mOvDYauyb_AFgvR3tAuC7Hth-45lMVuP', 'Projeção',         52629116),
     ],
   },
+  // ── Maio e julho de 2025 ───────────────────────────────────────────────
+  {
+    slug: '2025-05-18-5-domingo-pascoa', data: '2025-05-18', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '5º Domingo da Páscoa',
+    tituloExibicao: 'Missa das 9h — 5º Domingo da Páscoa',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Os nomes no Drive se contradizem: a pasta diz "3Domingo" e a projeção diz "4Domingo". A data no nome da pasta (18/05/2025) é o 5º Domingo da Páscoa — foi ela que usei. A pasta guarda também um "Templates.pptx".',
+    arquivos: [
+      A('pdf',  '1OHDte8zd2pYeAn4KJ9sPmbpwrVmf6AxM', 'Folheto',            197328),
+      A('docx', '1s8wgGMpLWQsOCwP-1LCGLecDOpBAVkKr', 'Texto de trabalho',  112615),
+      A('pptx', '1bC18fOOKZ6rwstvaGKXDD_I6bnlIVcTl', 'Projeção',         85770739),
+    ],
+  },
+  {
+    slug: '2025-05-25-missa-consagracao', data: '2025-05-25', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: '6º Domingo da Páscoa — Missa da Consagração',
+    tituloExibicao: 'Missa da Consagração',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Data do nome da pasta. Guarda também um "Templates.pptx" avulso.',
+    arquivos: [
+      A('pdf',  '1-x57qrnt3xsUnNuxIzt_NCxtxaZX_DOE', 'Folheto',            197086),
+      A('docx', '1aSU7wqYBorgFNnimUYHEg-15nFl8KUUR', 'Texto de trabalho',  111983),
+      A('pptx', '1e_qylEAHpiCHYmhsk6S5kSHN5Be10QYs', 'Projeção',         60751564),
+    ],
+  },
+  {
+    slug: '2025-07-20-16-domingo-tempo-comum', data: '2025-07-20', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '16º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 16º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Única celebração de julho de 2025 no Drive. Sem roteiro em PDF.',
+    arquivos: [
+      A('docx', '1xMBqwatSPwMUYHOL3yERiyidJryo5hXg', 'Texto de trabalho',  402813),
+      A('pptx', '1sza2vsU7HBi_by2HmveMYBrVJ90aFCmw', 'Projeção',         58094561),
+    ],
+  },
   // ── Agosto de 2025 ─────────────────────────────────────────────────────
   // Não há 20º Domingo: a Solenidade da Assunção caiu no domingo 17/08 e o
   // substituiu. Nenhuma celebração deste mês tem projeção no Drive.
