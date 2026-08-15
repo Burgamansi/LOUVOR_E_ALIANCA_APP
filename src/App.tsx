@@ -47,11 +47,14 @@ export default function App() {
   const [ajudaAberta, setAjudaAberta] = useState(false);
   const grupoWhatsApp = grupoConfigurado();
 
+  // Perfil de quem está usando o app. Enquanto não houver login, o padrão é o
+  // administrador — é ele quem publica missas, cifras e avisos, e era estranho
+  // o rodapé da barra lateral mostrar sempre outra pessoa da equipe.
   const [perfil, setPerfil] = useState<PerfilMinisterio>({
-    nome: 'Ana Maria',
-    apelido: 'Aninha',
-    papel: 'Pré-coordenação, vocal solo e salmo',
-    foto: '/integrantes/ana.jpg',
+    nome: 'Rogério Marcos',
+    apelido: 'Rogério',
+    papel: 'Coordenação · administrador do app',
+    foto: '/integrantes/rogerio.jpg',
     whatsappE164: null,
     whatsappPublico: false,
   });

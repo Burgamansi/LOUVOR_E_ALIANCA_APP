@@ -20,7 +20,10 @@ export interface ConfigMinisterio {
 
 export const MINISTERIO: ConfigMinisterio = {
   whatsappE164: null,
-  grupoWhatsApp: null,
+  // Guardamos só o código do convite, sem os parâmetros de rastreio que o
+  // WhatsApp cola no fim quando o link é compartilhado (?s=sw&p=a&ilr=0).
+  // A URL é montada em linkGrupoWhatsApp().
+  grupoWhatsApp: 'Bwi1moaRxE81ry1fNf5ggg',
   nomeGrupo: 'Louvor & Aliança — Equipe',
 };
 
