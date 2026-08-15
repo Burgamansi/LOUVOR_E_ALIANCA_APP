@@ -132,7 +132,7 @@ export function CifrasView({
   const escalaTexto = ['text-[13px]', 'text-sm', 'text-base', 'text-lg', 'text-xl'][tamanho] ?? 'text-sm';
 
   return (
-    <div className={`flex flex-col w-full ${modoPalco ? 'pb-32' : 'pb-24'}`}>
+    <div className={`flex flex-col w-full ${modoPalco ? 'pb-32' : 'pb-nav'}`}>
       {/* ── Barra do músico: uma linha, sempre visível ────────────────────── */}
       <div
         className={`sticky z-30 bg-[#FFF9F2]/95 backdrop-blur-md border-b border-[#7A2332]/15 ${

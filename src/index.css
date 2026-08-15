@@ -77,6 +77,28 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Espaço para a barra de navegação de baixo, que é fixa e translúcida.
+ *
+ * Um `pb-24` do Tailwind dá 96 px e parecia bastar: a barra tem h-16, que são
+ * 64 px. Mas ela também leva `pb-safe`, e num celular com barra de gestos o
+ * env(safe-area-inset-bottom) passa de 30 px — a barra ocupa quase 100 px e o
+ * fim do conteúdo fica por baixo dela. Como o vidro é translúcido, o texto não
+ * some: aparece esmaecido atrás da navegação, que é pior, porque parece
+ * defeito de renderização em vez de conteúdo cortado.
+ *
+ * Aqui a conta é a real, e o folgado de 1,5 rem é para o dedo alcançar o
+ * último botão sem esbarrar na navegação. */
+.pb-nav {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px) + 1.5rem);
+}
+
+@media (min-width: 768px) {
+  /* No computador não há barra de baixo. */
+  .pb-nav {
+    padding-bottom: 2rem;
+  }
+}
+
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
 }

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { analisarCifra } from '../lib/cifras/parser';
 import { transporCifra } from '../lib/cifras/render';
 import { tomEscrito } from '../lib/cifras/acordes';
@@ -28,9 +28,52 @@ export function CifraAlinhada({ texto, tomOriginal, semitons, className = '' }: 
     return transporCifra(base, tomEscrito(base.tomOriginal, semitons));
   }, [texto, tomOriginal, semitons]);
 
+  // A linha de cifra não pode quebrar: o acorde é posicionado em `left: {col}ch`
+  // sobre a letra, e uma quebra jogaria o acorde para cima da sílaba errada.
+  // Então ela rola para o lado — só que o app esconde toda barra de rolagem no
+  // CSS (index.css, ::-webkit-scrollbar), e no celular a linha simplesmente
+  // termina no meio da palavra sem nada avisar que há mais. Esta sombra na
+  // borda é a barra de rolagem que falta.
+  const caixa = useRef<HTMLDivElement>(null);
+  const conteudo = useRef<HTMLDivElement>(null);
+  const [temMais, setTemMais] = useState(false);
+
+  useEffect(() => {
+    const el = caixa.current;
+    const dentro = conteudo.current;
+    if (!el || !dentro) return;
+
+    const medir = () => setTemMais(el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
+    medir();
+    el.addEventListener('scroll', medir, { passive: true });
+
+    // Os dois precisam ser observados. A caixa muda de largura quando a janela
+    // gira; o conteúdo muda quando o A+ aumenta a letra — e nesse caso a caixa
+    // fica exatamente do mesmo tamanho, então observar só ela não dispara nada
+    // e a sombra nunca aparece justo quando a linha passou a não caber.
+    const observador = new ResizeObserver(medir);
+    observador.observe(el);
+    observador.observe(dentro);
+
+    return () => {
+      el.removeEventListener('scroll', medir);
+      observador.disconnect();
+    };
+  }, [cifra]);
+
   return (
-    <div className={`font-mono leading-6 overflow-x-auto ${className}`}>
-      <div className="min-w-max">
+    <div className="relative">
+      {temMais && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 flex items-center justify-end bg-gradient-to-l from-white via-white/85 to-transparent"
+        >
+          <span className="material-symbols-outlined text-[#7A2332]/45 text-xl">chevron_right</span>
+        </div>
+      )}
+
+      <div ref={caixa} className={`font-mono leading-6 overflow-x-auto ${className}`}>
+        <div ref={conteudo} className="min-w-max">
         {cifra.linhas.map((linha, i) => {
           if (linha.tipo === 'vazia') return <div key={i} className="h-4" />;
 
@@ -81,6 +124,7 @@ export function CifraAlinhada({ texto, tomOriginal, semitons, className = '' }: 
 
           return <div key={i} className="text-[#5C4A3E] italic">{linha.texto}</div>;
         })}
+        </div>
       </div>
     </div>
   );
