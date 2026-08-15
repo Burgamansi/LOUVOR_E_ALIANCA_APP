@@ -11,11 +11,14 @@ import { ControleVelocidade } from './ControleVelocidade';
 
 interface CifrasViewProps {
   songs: LiturgicalSong[];
-  selectedSong: LiturgicalSong;
+  /** Pode ser nula: o repertório fica vazio quando se apaga tudo. */
+  selectedSong: LiturgicalSong | null;
   onSelectSong: (song: LiturgicalSong) => void;
   onOpenDrive: () => void;
   onImportarCifra: () => void;
   onSubstituirCifra: (song: LiturgicalSong) => void;
+  /** Apaga uma cifra ou o repertório inteiro. */
+  onExcluirCifras: (ids: string[]) => void;
   /** Avisa o App para recolher cabeçalho e navegação no modo de palco. */
   onModoPalco: (ativo: boolean) => void;
 }
@@ -44,7 +47,8 @@ type Gaveta = 'nenhuma' | 'musicas' | 'tom';
  * toda cifra.
  */
 export function CifrasView({
-  songs, selectedSong, onSelectSong, onOpenDrive, onImportarCifra, onSubstituirCifra, onModoPalco,
+  songs, selectedSong, onSelectSong, onOpenDrive, onImportarCifra, onSubstituirCifra,
+  onExcluirCifras, onModoPalco,
 }: CifrasViewProps) {
   const [gaveta, setGaveta] = useState<Gaveta>('nenhuma');
   const [busca, setBusca] = useState('');
@@ -55,6 +59,12 @@ export function CifrasView({
   );
   const [mostrarControle, setMostrarControle] = useState(false);
 
+  // Apagar é o único movimento sem volta desta tela, então nada acontece no
+  // primeiro toque: o botão vira "confirmar?" e só o segundo apaga. Guardar o
+  // id (e não um booleano) faz a confirmação de uma música se cancelar sozinha
+  // quando se toca no lixo de outra.
+  const [confirmando, setConfirmando] = useState<string | null>(null);
+
   // Preferências de aparelho: sobrevivem ao fechar o app.
   const [favoritos, setFavoritos] = useLocal<string[]>('la:cifras-favoritas', []);
   const [velocidade, setVelocidade] = useLocal<number>('la:scroll-velocidade', VELOCIDADE_PADRAO);
@@ -63,13 +73,17 @@ export function CifrasView({
   // anos: reajustar toda missa é trabalho que o app pode poupar.
   const [tonsSalvos, setTonsSalvos] = useLocal<Record<string, number>>('la:cifras-tom', {});
 
-  const semitons = tonsSalvos[selectedSong.id] ?? 0;
-  const tomAtual = tomEscrito(selectedSong.key, semitons);
+  // Os ganchos precisam rodar mesmo sem música selecionada — a saída antecipada
+  // vem depois deles, lá embaixo, e não antes.
+  const idSelecionado = selectedSong?.id ?? '';
+  const semitons = tonsSalvos[idSelecionado] ?? 0;
+  const tomAtual = selectedSong ? tomEscrito(selectedSong.key, semitons) : '';
   const capo = sugerirCapotraste(tomAtual);
 
   const definirSemitons = useCallback((valor: number) => {
-    setTonsSalvos((atual) => ({ ...atual, [selectedSong.id]: normalizarSemitons(valor) }));
-  }, [selectedSong.id, setTonsSalvos]);
+    if (!idSelecionado) return;
+    setTonsSalvos((atual) => ({ ...atual, [idSelecionado]: normalizarSemitons(valor) }));
+  }, [idSelecionado, setTonsSalvos]);
 
   const { rolando, alternar, parar } = useAutoScroll({
     velocidade,
@@ -78,7 +92,7 @@ export function CifrasView({
 
   // Trocar de música com a rolagem ligada deixaria a cifra nova correndo do
   // meio; parar é o comportamento que não surpreende.
-  useEffect(() => { parar(); }, [selectedSong.id, parar]);
+  useEffect(() => { parar(); }, [idSelecionado, parar]);
 
   useEffect(() => { onModoPalco(modoPalco); }, [modoPalco, onModoPalco]);
 
@@ -136,7 +150,7 @@ export function CifrasView({
     });
   }, [songs, busca, momento]);
 
-  const ehFavorita = favoritos.includes(selectedSong.id);
+  const ehFavorita = favoritos.includes(idSelecionado);
   const alternarFavorita = (id: string) =>
     setFavoritos((atual) => (atual.includes(id) ? atual.filter((f) => f !== id) : [...atual, id]));
 
@@ -147,6 +161,44 @@ export function CifrasView({
   // cabe sem rolar, que é o ponto de ler no atril. No celular a coluna ficaria
   // mais estreita que a linha e cortaria a letra ao meio, então nem se oferece.
   const duasColunas = modoPalco && telaLarga;
+
+  // Repertório vazio. Acontece de propósito: quem apagou tudo para recomeçar
+  // limpo precisa cair num lugar que diga o que fazer, não numa tela quebrada.
+  // Depois de todos os ganchos, que não podem ficar atrás de um `if`.
+  if (!selectedSong) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center gap-4 px-6 py-20 max-w-md mx-auto">
+        <span
+          aria-hidden
+          className="material-symbols-outlined text-5xl text-[#C9A24A]"
+        >
+          library_music
+        </span>
+        <div>
+          <h2 className="font-serif text-2xl font-bold text-[#7A2332]">
+            O repertório está vazio
+          </h2>
+          <p className="text-sm text-[#5C4A3E] mt-1.5 leading-relaxed">
+            Importe o arquivo da missa do Word e cada canto entra aqui como uma música,
+            com o seu próprio tom.
+          </p>
+        </div>
+        <button
+          onClick={onImportarCifra}
+          className="flex items-center justify-center gap-2 h-12 px-6 rounded-2xl bg-[#7A2332] text-[#FFF9F2] text-sm font-bold hover:brightness-110 transition cursor-pointer"
+        >
+          <span aria-hidden className="material-symbols-outlined text-lg">upload_file</span>
+          Importar cifra do Word
+        </button>
+        <button
+          onClick={onOpenDrive}
+          className="text-xs font-bold text-[#5C4A3E] hover:text-[#7A2332] underline decoration-dotted cursor-pointer"
+        >
+          ou abrir a Biblioteca L&amp;A
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col w-full ${modoPalco ? 'pb-32' : 'pb-nav'}`}>
@@ -280,7 +332,7 @@ export function CifrasView({
                   </li>
                 )}
                 {filtradas.map((musica) => {
-                  const ativa = musica.id === selectedSong.id;
+                  const ativa = musica.id === idSelecionado;
                   const tomSalvo = tonsSalvos[musica.id] ?? 0;
                   return (
                     <li key={musica.id} className="flex items-center gap-1">
@@ -314,6 +366,31 @@ export function CifrasView({
                           {favoritos.includes(musica.id) ? 'star' : 'star_border'}
                         </span>
                       </button>
+
+                      <button
+                        onClick={() => {
+                          if (confirmando === musica.id) {
+                            onExcluirCifras([musica.id]);
+                            setConfirmando(null);
+                          } else {
+                            setConfirmando(musica.id);
+                          }
+                        }}
+                        onBlur={() => setConfirmando((c) => (c === musica.id ? null : c))}
+                        aria-label={
+                          confirmando === musica.id
+                            ? `Confirmar exclusão de ${musica.title}`
+                            : `Excluir ${musica.title}`
+                        }
+                        className={`shrink-0 h-9 rounded-xl flex items-center justify-center gap-1 transition cursor-pointer ${
+                          confirmando === musica.id
+                            ? 'px-2.5 bg-red-600 text-white text-[10px] font-bold'
+                            : 'w-9 text-[#5C4A3E]/40 hover:text-red-600'
+                        }`}
+                      >
+                        <span aria-hidden className="material-symbols-outlined text-lg">delete</span>
+                        {confirmando === musica.id && 'Apagar?'}
+                      </button>
                     </li>
                   );
                 })}
@@ -326,6 +403,37 @@ export function CifrasView({
                 <span aria-hidden className="material-symbols-outlined text-lg">upload_file</span>
                 Importar cifra do Word ou colar texto
               </button>
+
+              {/* Limpar tudo fica no rodapé da gaveta, longe do polegar que
+                  navega, e apaga o que está VISÍVEL na lista: com um filtro ou
+                  uma busca ativa, apaga só aquilo. Assim dá para limpar uma
+                  importação inteira sem levar junto o resto do repertório. */}
+              {songs.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (confirmando === 'todas') {
+                      onExcluirCifras(filtradas.map((m) => m.id));
+                      setConfirmando(null);
+                      setGaveta('nenhuma');
+                    } else {
+                      setConfirmando('todas');
+                    }
+                  }}
+                  onBlur={() => setConfirmando((c) => (c === 'todas' ? null : c))}
+                  className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    confirmando === 'todas'
+                      ? 'bg-red-600 text-white'
+                      : 'text-[#5C4A3E] hover:text-red-600 hover:bg-red-50'
+                  }`}
+                >
+                  <span aria-hidden className="material-symbols-outlined text-lg">delete_sweep</span>
+                  {confirmando === 'todas'
+                    ? `Apagar ${filtradas.length} ${filtradas.length === 1 ? 'cifra' : 'cifras'}? Toque de novo`
+                    : busca.trim() || momento
+                      ? `Excluir as ${filtradas.length} desta busca`
+                      : 'Excluir todas as cifras'}
+                </button>
+              )}
             </div>
           </div>
         )}
