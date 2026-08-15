@@ -12,7 +12,7 @@ export const INITIAL_CELEBRATION: Celebration = {
   liturgicalColor: 'Verde',
   repertoireStatus: 'Completo',
   confirmedMusiciansCount: 5,
-  totalMusiciansCount: 6,
+  totalMusiciansCount: 5,
   pendencies: [
     'Ajustar tom do Salmo Responsorial com a salmista Ana',
     'Testar microfone sem fio para os casais de acolhida'
@@ -43,7 +43,7 @@ export const INITIAL_MUSICIANS: Musician[] = [
   },
   {
     id: 'm3',
-    name: 'Ana Maria',
+    name: 'Aninha',
     role: 'Pré-coordenação, vocal solo e salmo',
     initials: 'AM',
     avatar: '/integrantes/ana.jpg',
@@ -64,13 +64,6 @@ export const INITIAL_MUSICIANS: Musician[] = [
     initials: 'ES',
     avatar: '/integrantes/edson.jpg',
     confirmed: true
-  },
-  {
-    id: 'm6',
-    name: 'Carla & Marcos',
-    role: 'Casal Acolhedor & Animação',
-    initials: 'CM',
-    confirmed: false
   }
 ];
 

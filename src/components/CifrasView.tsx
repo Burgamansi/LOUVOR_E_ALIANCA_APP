@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LiturgicalSong, TabType } from '../types';
 import {
-  transposeChordBlock,
   KEY_LIST,
   calculateSemitones,
   getTransposedKeyName
 } from '../utils/chordTransposer';
+import { CifraAlinhada } from './CifraAlinhada';
+import { CifraPainel } from './CifraPainel';
 
 interface CifrasViewProps {
   songs: LiturgicalSong[];
@@ -81,7 +82,6 @@ export const CifrasView: React.FC<CifrasViewProps> = ({
   const handleTransposeDown = () => setSemitones(prev => prev - 1);
 
   // Transposed song chords
-  const transposedContent = transposeChordBlock(selectedSong.fullChordText, semitones);
 
   return (
     <div className="flex flex-col w-full pb-12">
@@ -382,26 +382,20 @@ export const CifrasView: React.FC<CifrasViewProps> = ({
           </p>
         </header>
 
-        {/* Lyrics & Chords Section */}
-        <div className="font-mono text-[#2D2118] leading-relaxed whitespace-pre-wrap bg-white p-6 rounded-2xl border border-[#7A2332]/15 shadow-xs">
-          {transposedContent.split('\n').map((line, idx) => {
-            // Check if line looks like chords
-            const isChordLine = /^[A-G][#b]?(?:m|maj|dim|aug|sus[24]?|add[91113]?|[2456789]|11|13)*(?:\/[A-G][#b]?)?(\s+[A-G][#b]?(?:m|maj|dim|aug|sus[24]?|add[91113]?|[2456789]|11|13)*(?:\/[A-G][#b]?)?)*\s*$/.test(line.trim());
-
-            if (isChordLine) {
-              return (
-                <div key={idx} className="text-[#7A2332] font-bold text-lg tracking-wide my-1">
-                  {line}
-                </div>
-              );
-            }
-            return (
-              <div key={idx} className="my-0.5 text-[#2D2118]">
-                {line}
-              </div>
-            );
-          })}
+        {/* Cifra alinhada — cada acorde ancorado na coluna da sílaba.
+            Transpor troca só o acorde; a letra nunca é reescrita. */}
+        <div className="bg-white p-6 rounded-2xl border border-[#7A2332]/15 shadow-xs">
+          <CifraAlinhada
+            texto={selectedSong.fullChordText}
+            tomOriginal={selectedSong.key}
+            semitons={semitones}
+          />
         </div>
+      </div>
+
+      {/* Importação e transposição — motor novo, com âncoras por caractere */}
+      <div className="px-5 pb-2 max-w-2xl mx-auto w-full">
+        <CifraPainel />
       </div>
 
       {/* Upload / Empty State Zone */}

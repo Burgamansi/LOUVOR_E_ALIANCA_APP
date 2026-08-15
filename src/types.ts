@@ -1,4 +1,12 @@
-export type TabType = 'programacao' | 'cifras' | 'drive' | 'comunidade' | 'midia';
+export type TabType =
+  | 'programacao'
+  | 'missas'
+  | 'cifras'
+  | 'propostas'
+  | 'links'
+  | 'drive'
+  | 'comunidade'
+  | 'midia';
 
 export interface Musician {
   id: string;

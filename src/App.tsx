@@ -19,14 +19,35 @@ import { CifrasView } from './components/CifrasView';
 import { DriveView } from './components/DriveView';
 import { ComunidadeView } from './components/ComunidadeView';
 import { MidiaView } from './components/MidiaView';
+import { MissasView } from './components/MissasView';
+import { LinksUteisView } from './components/LinksUteisView';
+import { PropostasView } from './components/PropostasView';
+import { BotaoWhatsAppFlutuante } from './components/BotaoWhatsAppFlutuante';
+import { ModalPerfil } from './components/ModalPerfil';
+import type { PerfilMinisterio } from './components/ModalPerfil';
 
 import { NewNoticeModal } from './components/NewNoticeModal';
 import { AddChordModal } from './components/AddChordModal';
 import { UploadMediaModal } from './components/UploadMediaModal';
 import { NewPlaylistModal } from './components/NewPlaylistModal';
 
+// WhatsApp do ministério — é o número do botão flutuante e o da página
+// pública. No banco vive em config('whatsapp_ministerio'); enquanto o Turso não
+// responde, fica aqui. Trocar por um número real ativa o botão.
+const WHATSAPP_MINISTERIO = '';
+
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('programacao');
+
+  const [perfil, setPerfil] = useState<PerfilMinisterio>({
+    nome: 'Ana Maria',
+    apelido: 'Aninha',
+    papel: 'Pré-coordenação, vocal solo e salmo',
+    foto: '/integrantes/ana.jpg',
+    whatsappE164: null,
+    whatsappPublico: false,
+  });
+  const [isPerfilOpen, setIsPerfilOpen] = useState(false);
 
   // Application State
   const [celebration, setCelebration] = useState<Celebration>(INITIAL_CELEBRATION);
@@ -136,7 +157,10 @@ export default function App() {
   const getTabTitle = () => {
     switch (currentTab) {
       case 'programacao': return 'Programação Litúrgica';
+      case 'missas': return 'Missas & Arquivos';
       case 'cifras': return 'Cifras & Repertório';
+      case 'propostas': return 'Propostas Musicais';
+      case 'links': return 'Links Úteis';
       case 'drive': return 'Biblioteca Louvor & Aliança';
       case 'comunidade': return 'Comunidade & Oração';
       case 'midia': return 'Galeria de Memórias';
@@ -157,6 +181,8 @@ export default function App() {
       <Sidebar
         currentTab={currentTab}
         onTabChange={setCurrentTab}
+        perfil={perfil}
+        onAbrirPerfil={() => setIsPerfilOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -180,6 +206,12 @@ export default function App() {
           />
         )}
 
+
+        {currentTab === 'missas' && <MissasView />}
+
+        {currentTab === 'links' && <LinksUteisView />}
+
+        {currentTab === 'propostas' && <PropostasView />}
 
         {currentTab === 'cifras' && (
           <CifrasView
@@ -223,7 +255,17 @@ export default function App() {
         onTabChange={setCurrentTab}
       />
 
+      {/* Botão flutuante do WhatsApp — some sozinho se não houver número */}
+      <BotaoWhatsAppFlutuante e164={WHATSAPP_MINISTERIO || perfil.whatsappE164} />
+
       {/* Modals */}
+      <ModalPerfil
+        aberto={isPerfilOpen}
+        onFechar={() => setIsPerfilOpen(false)}
+        perfil={perfil}
+        onSalvar={setPerfil}
+      />
+
       <NewNoticeModal
         isOpen={isNewNoticeOpen}
         onClose={() => setIsNewNoticeOpen(false)}
