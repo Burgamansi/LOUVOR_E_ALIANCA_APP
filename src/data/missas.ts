@@ -38,6 +38,82 @@ const A = (tipo: TipoArquivoMissa, driveFileId: string, nomeExibicao: string, ta
 const LOCAL = 'Paróquia São Judas Tadeu — Americana/SP';
 
 export const MISSAS: Missa[] = [
+  // ── Advento e Natal de 2025 — início do Ano A ──────────────────────────
+  // Primeiro lote do acervo de 2025 (MISSAS_2025 no Drive). O Advento de
+  // dezembro de 2025 já pertence ao Ano A, o mesmo ano litúrgico de 2026 —
+  // por isso abre a lista.
+  {
+    slug: '2025-11-30-1-domingo-advento', data: '2025-11-30', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '1º Domingo do Advento',
+    tituloExibicao: 'Missa das 9h — 1º Domingo do Advento',
+    cor: 'roxo', status: 'publicada', local: LOCAL,
+    observacao: 'Roteiro e texto são o mesmo arquivo do 2º e do 3º Domingo do Advento — só a projeção é própria.',
+    arquivos: [
+      A('pdf',  '1_jn-ydtQ8p6ZLLqgJHeNdgtfqqnShQDc', 'Roteiro',            358947),
+      A('docx', '1IFYjJ4A7gPHoKncl4CLZT-rC8WYd8V40', 'Texto de trabalho',  335409),
+      A('pptx', '1V9B60tMRRQyt3KUAJXe2ldkwjF6p90na', 'Projeção',         24929621),
+    ],
+  },
+  {
+    slug: '2025-12-07-2-domingo-advento', data: '2025-12-07', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '2º Domingo do Advento',
+    tituloExibicao: 'Missa das 9h — 2º Domingo do Advento',
+    cor: 'roxo', status: 'publicada', local: LOCAL,
+    observacao: 'Roteiro e texto compartilhados com o 1º e o 3º Domingo do Advento.',
+    arquivos: [
+      A('pdf',  '1V06I_tzPjEMYRQO6Vjm-aF03egDeelHy', 'Roteiro',            358947),
+      A('docx', '1OxupQ1iUODl-m9AMQXTDN-7FK3ovjWG9', 'Texto de trabalho',  335409),
+      A('pptx', '1d5_YqNyj_8u_SgGTJWQ58tuPTEtwcRkJ', 'Projeção',         23910763),
+    ],
+  },
+  {
+    slug: '2025-12-14-3-domingo-advento', data: '2025-12-14', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '3º Domingo do Advento — Gaudete',
+    tituloExibicao: 'Missa das 9h — 3º Domingo do Advento (Gaudete)',
+    cor: 'rosa', status: 'publicada', local: LOCAL,
+    observacao: 'Roteiro e texto compartilhados com o 1º e o 2º Domingo do Advento.',
+    arquivos: [
+      A('pdf',  '1r63bIbc5GDNuDDgxz7jcE4CMJsSVGCU5', 'Roteiro',            358947),
+      A('docx', '18e7848dtYhcPtyF0YMPlQOsWqu33upin', 'Texto de trabalho',  335409),
+      A('pptx', '1iuU1BU_A4ga1YGNkT5TKT_Obd83HAEIp', 'Projeção',         26152333),
+    ],
+  },
+  {
+    slug: '2025-12-21-4-domingo-advento', data: '2025-12-21', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '4º Domingo do Advento',
+    tituloExibicao: 'Missa das 9h — 4º Domingo do Advento',
+    cor: 'roxo', status: 'publicada', local: LOCAL,
+    observacao: 'A projeção foi salva em 23/12, depois da celebração — provavelmente atualizada junto com a do Natal. A pasta guarda também "Docações.pptx", de outro assunto.',
+    arquivos: [
+      A('pdf',  '1uw_Z0QE5_W-3ifqyY5gZg93jX_ajmEid', 'Roteiro',            299235),
+      A('docx', '1fEVbPQq7xhd0cGK_3teoEHJt77nA9IHb', 'Texto de trabalho',  241416),
+      A('pptx', '1HLkhVJadXhxDZ-szRGioC7q-ftVNqy8Q', 'Projeção',         25591447),
+    ],
+  },
+  {
+    slug: '2025-12-25-natal-do-senhor', data: '2025-12-25', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Natal do Senhor',
+    tituloExibicao: 'Missa do Natal do Senhor',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'A pasta guarda também o texto do Natal de 2022 e um "Untitled design.pptx" — ignorados.',
+    arquivos: [
+      A('pdf',  '1Cd6Aysr3TjJ02seAeLqQ20Q87bDZZXHl', 'Roteiro',            253788),
+      A('docx', '1jtOcycfVQdFaOzIgu8jBUypfgOhjUhEs', 'Texto de trabalho',  240018),
+      A('pptx', '1cWV_MLO4DTcmCa1IgjQz-STlWfqJJw0m', 'Projeção',         21898173),
+    ],
+  },
+  {
+    slug: '2025-12-28-sagrada-familia', data: '2025-12-28', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: 'Festa da Sagrada Família',
+    tituloExibicao: 'Festa da Sagrada Família',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Os arquivos estão rotulados "Ano C", mas dezembro de 2025 já é Ano A — provável reaproveitamento de 2024. A pasta guarda também um "Untitled design.pptx".',
+    arquivos: [
+      A('pdf',  '16E61KtdBGrLCns3jcPP32LtAdrwqQqp5', 'Roteiro',            254950),
+      A('docx', '1a0ZrxcEX7pXzEYKVuXo_tToKPMJUA462', 'Texto de trabalho',  239869),
+      A('pptx', '1ypHEaZ6WzcATMpJ4pxcpbJU0vVUNltoG', 'Projeção',         21390163),
+    ],
+  },
   // ── Janeiro a março de 2026 ────────────────────────────────────────────
   // Mapeadas a partir de MISSAS_2026 no Drive. As datas vêm do calendário
   // litúrgico (Páscoa em 05/04/2026) e conferem com a data de modificação de
