@@ -38,6 +38,51 @@ const A = (tipo: TipoArquivoMissa, driveFileId: string, nomeExibicao: string, ta
 const LOCAL = 'Paróquia São Judas Tadeu — Americana/SP';
 
 export const MISSAS: Missa[] = [
+  // ── Novembro de 2025 — fim do Ano C ────────────────────────────────────
+  {
+    slug: '2025-11-02-finados', data: '2025-11-02', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Comemoração de Todos os Fiéis Defuntos',
+    tituloExibicao: 'Missa de Finados',
+    cor: 'roxo', status: 'publicada', local: LOCAL,
+    arquivos: [
+      A('pdf',  '1TrVqkHFSKYaDznf-ku8CTX54YQZIPZLJ', 'Roteiro',            269203),
+      A('docx', '1UgDvVZZbMcEceAELD-V1YtQOxyAU_DOi', 'Texto de trabalho',  101610),
+      A('pptx', '14Xy7aAHq-K4FcMv2nQWs3TYhqqKG2ByC', 'Projeção',         34562112),
+    ],
+  },
+  {
+    slug: '2025-11-09-dedicacao-basilica-latrao', data: '2025-11-09', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Dedicação da Basílica do Latrão',
+    tituloExibicao: 'Festa da Dedicação da Basílica do Latrão',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    arquivos: [
+      A('pdf',  '12ByCZitV1uxEvGcf78OtAuNdzhJYnm9K', 'Roteiro',            293110),
+      A('docx', '1FW8MHL0lpMlywYP2K_884tsgUrjzhk5F', 'Texto de trabalho',   91046),
+      A('pptx', '1hemAXnVBAH9sQuoIyfMo6lRj8s6tNRNy', 'Projeção',         35363431),
+    ],
+  },
+  {
+    slug: '2025-11-16-33-domingo-tempo-comum', data: '2025-11-16', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '33º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 33º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    arquivos: [
+      A('pdf',  '10_ZJLKz-1KHrpBP_nj36U2DktFunxiVz', 'Roteiro',            288633),
+      A('docx', '1iCQ7jI7ZR_FPhI03CZFjhu87di4sRJZh', 'Texto de trabalho',   91182),
+      A('pptx', '1yaqx0tuSe0giEmh_OruJBwMjopWnmHH6', 'Projeção',         34894414),
+    ],
+  },
+  {
+    slug: '2025-11-23-cristo-rei', data: '2025-11-23', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Nosso Senhor Jesus Cristo, Rei do Universo',
+    tituloExibicao: 'Solenidade de Cristo Rei — 34º Domingo do Tempo Comum',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Sem texto de trabalho (.docx) no Drive — só roteiro e projeção.',
+    arquivos: [
+      A('pdf',  '1TpEWhLgoB7JdXVYzbhjdR3gqs0OGPkdc', 'Roteiro',            362772),
+      A('pptx', '1nNvANZkrZ3joAX6rOpjZYarKmdvRcazZ', 'Projeção',         70991013),
+    ],
+  },
   // ── Advento e Natal de 2025 — início do Ano A ──────────────────────────
   // Primeiro lote do acervo de 2025 (MISSAS_2025 no Drive). O Advento de
   // dezembro de 2025 já pertence ao Ano A, o mesmo ano litúrgico de 2026 —
