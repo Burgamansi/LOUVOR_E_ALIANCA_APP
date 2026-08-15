@@ -34,15 +34,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className="hidden md:flex fixed left-0 top-0 h-screen w-[280px] flex-col bg-[#FFF9F2] border-r border-[#7A2332]/15 z-50 shadow-sm">
       {/* Header / Logo */}
       <div className="shrink-0 p-6 flex flex-col items-center text-center gap-2 border-b border-[#7A2332]/10 bg-gradient-to-b from-[#7A2332]/5 to-transparent">
-        {/* A marca do ministério — o monograma de coração e cruz da arte da
-            capa — no lugar do ícone genérico de igreja que estava aqui. */}
-        <div className="w-16 h-16 rounded-full bg-[#4D1721] flex items-center justify-center shadow-md ring-2 ring-[#C9A24A] overflow-hidden">
-          <img
-            src="/logo-la.png"
-            alt="Louvor &amp; Aliança"
-            className="w-[78%] h-[78%] object-contain"
-          />
-        </div>
+        {/* A arte circular do ministério, no lugar do ícone genérico de igreja.
+            Neste tamanho ela ainda se lê: "A MISSA DAS 9H" e os rostos da
+            equipe aparecem. No cabeçalho do celular, que é menos da metade
+            disto, continua valendo o monograma sozinho. */}
+        <img
+          src="/logo-missa.png"
+          alt="Louvor &amp; Aliança — A Missa das 9h"
+          className="w-16 h-16 rounded-full shadow-md ring-2 ring-[#C9A24A] object-cover"
+        />
         <h2 className="font-headline-md text-xl text-[#7A2332] font-bold tracking-tight mt-1">
           LOUVOR & ALIANÇA
         </h2>

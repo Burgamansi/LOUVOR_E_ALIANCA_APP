@@ -358,8 +358,9 @@ export const INITIAL_NOTICES: Notice[] = [
     tag: 'Horários',
     title: 'Missas do fim de semana na Paróquia São Judas Tadeu',
     content:
-      'Sábado, às 19h: missa dominical antecipada. ' +
-      'Domingo, às 9h: Missa das 9h, animada pelo ministério Louvor & Aliança — ' +
+      'Sábado, às 18h30: missa dominical antecipada. ' +
+      'Domingo, às 7h: primeira missa da manhã. ' +
+      'Domingo, às 9h: a Missa das 9h, animada pelo ministério Louvor & Aliança — ' +
       'é a nossa missa, e a escala de cada domingo está na Programação. ' +
       'Domingo, às 19h: missa vespertina. ' +
       'Paróquia São Judas Tadeu, Americana/SP.',

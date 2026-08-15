@@ -78,12 +78,18 @@ export function BoasVindas({ aberto, onFechar, onIrPara, grupo, nomeGrupo }: Boa
         <div className="flex-1 overflow-y-auto px-5 py-5">
           {passo === 0 && (
             <div className="text-center flex flex-col items-center gap-3 py-4">
-              <div className="w-20 h-20 rounded-full bg-[#4D1721] flex items-center justify-center ring-2 ring-[#C9A24A] shadow-md overflow-hidden">
-                <img src="/logo-la.png" alt="Louvor &amp; Aliança" className="w-[78%] h-[78%] object-contain" />
-              </div>
+              {/* A arte circular da Missa das 9h em tamanho grande. Este é o
+                  único momento do app em que há espaço para ela ser lida —
+                  num círculo de 64 px, como o da barra lateral, a peça inteira
+                  (logo, tipografia e cinco rostos) vira uma mancha dourada. */}
+              <img
+                src="/logo-missa.png"
+                alt="Ministério Louvor &amp; Aliança — A Missa das 9h"
+                className="w-44 h-44 sm:w-52 sm:h-52 rounded-full shadow-lg ring-2 ring-[#C9A24A]/60"
+              />
               <div>
                 <p className="text-[11px] uppercase tracking-[0.2em] font-bold text-[#C9A24A]">
-                  Ministério Louvor &amp; Aliança
+                  Paróquia São Judas Tadeu · Americana/SP
                 </p>
                 <h2 className="font-serif text-3xl font-bold text-[#7A2332] mt-1">
                   Bem-vindo ao app da equipe
