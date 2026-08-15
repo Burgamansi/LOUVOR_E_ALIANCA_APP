@@ -105,7 +105,7 @@ export const ProgramacaoView: React.FC<ProgramacaoViewProps> = ({
           <img
             src={celebration.coverImage || '/capa-missa-9h.jpg'}
             alt="Missa das 9 Horas — Missão Louvor & Aliança: Cantar é Orar Duas Vezes"
-            className="w-full h-auto block aspect-[1789/876] object-cover object-center"
+            className="w-full h-auto block aspect-[1845/817] object-cover object-center"
             loading="eager"
           />
 
