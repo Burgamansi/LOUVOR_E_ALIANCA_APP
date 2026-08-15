@@ -64,7 +64,9 @@ export default function App() {
   const [celebration, setCelebration] = useState<Celebration>(INITIAL_CELEBRATION);
   const [musicians] = useState<Musician[]>(INITIAL_MUSICIANS);
   const [songs, setSongs] = useState<LiturgicalSong[]>(INITIAL_SONGS);
-  const [selectedSong, setSelectedSong] = useState<LiturgicalSong>(INITIAL_SONGS[0]);
+  // Pode ficar sem nenhuma: quem importa uma missa inteira também precisa
+  // poder apagar tudo e recomeçar limpo.
+  const [selectedSong, setSelectedSong] = useState<LiturgicalSong | null>(INITIAL_SONGS[0] ?? null);
   const [notices, setNotices] = useState<Notice[]>(INITIAL_NOTICES);
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [galleryMedia, setGalleryMedia] = useState<GalleryMediaItem[]>(GALLERY_MEDIA);
@@ -158,6 +160,31 @@ export default function App() {
    * música própria — é isso que dá a cada um o seu tom, já que o tom é guardado
    * por id de música. Abre no primeiro, que é a Entrada.
    */
+  /**
+   * Apaga cifras do repertório.
+   *
+   * Recebe uma lista porque os dois casos são o mesmo: apagar uma que não
+   * ficou boa, e limpar tudo depois de uma importação que saiu errada.
+   *
+   * Quem sai da lista sai também de `activeSongIds` e da escala — deixar o id
+   * de uma música apagada pendurado ali faz a Programação mostrar um buraco.
+   */
+  const handleExcluirCifras = (ids: string[]) => {
+    if (ids.length === 0) return;
+    const apagados = new Set(ids);
+
+    setSongs((prev) => {
+      const restantes = prev.filter((s) => !apagados.has(s.id));
+      // Se a que estava aberta foi apagada, abre a primeira que sobrou.
+      setSelectedSong((atual) =>
+        atual && apagados.has(atual.id) ? (restantes[0] ?? null) : atual
+      );
+      return restantes;
+    });
+
+    setActiveSongIds((prev) => prev.filter((id) => !apagados.has(id)));
+  };
+
   const handleSalvarVariasCifras = (novas: LiturgicalSong[]) => {
     if (novas.length === 0) return;
     setSongs((prev) => {
@@ -266,6 +293,7 @@ export default function App() {
             onOpenDrive={() => setCurrentTab('drive')}
             onImportarCifra={() => { setCifraEmEdicao(null); setIsImportarCifraOpen(true); }}
             onSubstituirCifra={(musica) => { setCifraEmEdicao(musica); setIsImportarCifraOpen(true); }}
+            onExcluirCifras={handleExcluirCifras}
             onModoPalco={setModoPalco}
           />
         )}
