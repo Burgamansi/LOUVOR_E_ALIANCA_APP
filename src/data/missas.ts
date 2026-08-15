@@ -151,6 +151,18 @@ export const MISSAS: Missa[] = [
     ],
   },
   {
+    slug: '2026-08-15-assuncao-de-nossa-senhora', data: '2026-08-15', hora: '18:30', tipo: 'solenidade',
+    tituloLiturgico: 'Assunção de Nossa Senhora',
+    tituloExibicao: 'Solenidade da Assunção de Nossa Senhora',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Horário a confirmar com a coordenação — usei o da missa de sábado.',
+    arquivos: [
+      A('pdf',  '1cHkLwU2gS25pV3J77FX1kLO33-Crgdc5', 'Roteiro',            284478),
+      A('docx', '1-0OCDH5U1TtPil-8pH8vKTs5cEO0g_gV', 'Texto de trabalho',  983212),
+      A('pptx', '1p_ExrPJvR_g3ELBC5kv74LtRH6Sp5nsv', 'Projeção',         79383947),
+    ],
+  },
+  {
     slug: '2026-08-16-20-domingo-tempo-comum', data: '2026-08-16', hora: '09:00', tipo: 'domingo',
     tituloLiturgico: '20º Domingo do Tempo Comum',
     tituloExibicao: 'Missa das 9h — 20º Domingo do Tempo Comum',
