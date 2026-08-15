@@ -107,9 +107,12 @@ export function ImportarCifraModal({
       musicaExistente
         ? []
         : d.cantos.map((c) => ({
-            incluir: true,
+            // O canto que veio sem conteúdo entra desmarcado: salvar uma
+            // música vazia não ajuda ninguém, mas ele precisa aparecer para a
+            // pessoa ver que aquele momento está em branco no arquivo dela.
+            incluir: c.texto.trim().length > 0,
             titulo: c.titulo,
-            momento: c.momento ?? 'ENTRADA',
+            momento: c.momento ?? 'OUTRO',
             tom: c.tomSugerido,
             texto: c.texto,
             confianca: c.confianca,
@@ -361,6 +364,12 @@ export function ImportarCifraModal({
                             {c.momento}
                           </span>
 
+                          {!c.texto.trim() && (
+                            <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                              vazio no arquivo
+                            </span>
+                          )}
+
                           <input
                             value={c.titulo}
                             onChange={(e) => mudarCanto(i, { titulo: e.target.value })}
@@ -405,14 +414,20 @@ export function ImportarCifraModal({
                               </select>
                             </label>
 
-                            <div className="max-h-56 overflow-auto rounded-xl bg-white border border-[#7A2332]/10 p-3">
-                              <CifraAlinhada
-                                texto={c.texto}
-                                tomOriginal={c.tom}
-                                semitons={0}
-                                className="text-xs"
-                              />
-                            </div>
+                            {c.texto.trim() ? (
+                              <div className="max-h-56 overflow-auto rounded-xl bg-white border border-[#7A2332]/10 p-3">
+                                <CifraAlinhada
+                                  texto={c.texto}
+                                  tomOriginal={c.tom}
+                                  semitons={0}
+                                  className="text-xs"
+                                />
+                              </div>
+                            ) : (
+                              <p className="text-xs text-[#5C4A3E] italic bg-white border border-dashed border-[#7A2332]/20 rounded-xl px-3 py-3">
+                                O título está no arquivo, mas não há nada escrito embaixo dele.
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>

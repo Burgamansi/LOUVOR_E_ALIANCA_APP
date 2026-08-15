@@ -19,6 +19,7 @@
 // consumida como fronteira e nunca chega ao parser.
 
 import { analisarCifra, deduzirTom, ehLinhaDeAcordes } from './parser';
+import { ehAcorde, ehSimboloNeutro } from './acordes';
 
 /** Os momentos da missa, na ordem em que acontecem. */
 export const MOMENTOS_LITURGICOS = [
@@ -33,6 +34,9 @@ export const MOMENTOS_LITURGICOS = [
   'COMUNHÃO',
   'PÓS-COMUNHÃO',
   'FINAL',
+  // Para o canto que o arquivo anunciou sem dizer o momento — "CANTO:
+  // PAEZINHOS". Existe só na lista da tela; não entra na detecção.
+  'OUTRO',
 ] as const;
 
 export interface CantoDetectado {
@@ -77,7 +81,7 @@ const CHAVES: { momento: string; formas: string[] }[] = [
  * numa linha é o momento; dentro de "Santo é o Senhor Deus do universo" não é,
  * e é por isso que a linha inteira precisa bater, não uma parte dela.
  */
-export function lerCabecalhoDeMomento(linha: string): { momento: string; resto: string } | null {
+export function lerCabecalhoDeMomento(linha: string): { momento: string | null; resto: string } | null {
   const cru = linha.trim();
   if (!cru || cru.length > 60) return null;
 
@@ -87,12 +91,21 @@ export function lerCabecalhoDeMomento(linha: string): { momento: string; resto: 
   if (ehLinhaDeAcordes(cru)) return null;
 
   // Tira numeração e enfeites: "1 - ", "2. ", "•", "*ENTRADA*", "== SANTO =="
+  // Os dois-pontos do fim também: "CANTO FINAL :" é escrito assim.
   const limpa = cru
     .replace(/^[\s*_=~•·\-–—]+/, '')
-    .replace(/[\s*_=~•·]+$/, '')
+    .replace(/[\s*_=~•·:]+$/, '')
     .replace(/^\d+\s*[).\-–—:]?\s*/, '');
 
-  const alvo = semAcento(limpa);
+  // A palavra "CANTO" antes do momento é um marcador explícito de título:
+  // "CANTO: COMUNHÃO", "CANTO SANTO", "CANTO: GLÓRIA A DEUS - Opção 02".
+  // Quem escreve isso está anunciando um canto, não cantando um verso — então
+  // depois dela dá para ser bem mais permissivo do que numa linha solta.
+  const mPrefixo = /^CANTO(?:\s+(?:DE|DA|DO))?\b\s*[:\-–—|]?\s*/.exec(limpa.toUpperCase());
+  const explicito = mPrefixo !== null && mPrefixo[0].length < limpa.length;
+  const resto = explicito ? limpa.slice(mPrefixo![0].length).trim() : limpa;
+
+  const alvo = semAcento(resto);
 
   for (const { momento, formas } of CHAVES) {
     for (const forma of formas) {
@@ -103,14 +116,30 @@ export function lerCabecalhoDeMomento(linha: string): { momento: string; resto: 
       const m = comSeparador.exec(alvo);
       if (m) {
         // O resto sai da linha original, com acento e caixa preservados.
-        const corte = limpa.length - m[1].length;
-        return { momento, resto: limpa.slice(corte).trim() };
+        const corte = resto.length - m[1].length;
+        return { momento, resto: resto.slice(corte).trim() };
       }
 
       // "COMUNHÃO 2" sem separador nenhum.
       if (new RegExp(`^${forma}\\s+\\d+$`).test(alvo)) return { momento, resto: '' };
+
+      // Só depois de um "CANTO:" explícito: o momento seguido do resto do
+      // título, sem separador. "CANTO: GLÓRIA A DEUS - Opção 02" é o Glória, e
+      // o título da música é a linha inteira, não o que vem depois da palavra.
+      //
+      // Isto fica trancado atrás do prefixo de propósito. Solto, ele engoliria
+      // "SANTO É O SENHOR DEUS DO UNIVERSO", que é letra, não cabeçalho.
+      if (explicito && alvo.startsWith(`${forma} `)) {
+        return { momento, resto };
+      }
     }
   }
+
+  // "CANTO: MANTRA DA PALAVRA", "CANTO: PAEZINHOS" — a pessoa anunciou um
+  // canto, mas o que vem depois não é nome de momento nenhum. Continua sendo
+  // uma fronteira: sem isto, essas músicas ficavam grudadas no canto anterior
+  // e herdavam o tom dele. O momento fica em aberto para a tela perguntar.
+  if (explicito && resto) return { momento: null, resto };
 
   return null;
 }
@@ -123,13 +152,28 @@ function ultimaLinhaComTexto(linhas: string[], i: number): string {
   return '';
 }
 
-/** O primeiro verso do bloco — o que serve de título quando não há outro. */
+/**
+ * O primeiro verso do bloco — o que serve de título quando não há outro.
+ *
+ * Não basta pular o que `ehLinhaDeAcordes` reconhece. Num arquivo de verdade
+ * apareceram "INTRO: Am G F E Am" e "CC7  F  G  C  Am" virando nome de música:
+ * a primeira tem o rótulo na frente e a segunda tem um erro de digitação
+ * ("CC7"), e qualquer um dos dois basta para a linha inteira deixar de ser
+ * reconhecida como acordes. Aqui a conta é por maioria — se a maior parte dos
+ * pedaços é acorde, aquilo é uma linha de acordes com um defeito, não um verso.
+ */
 function primeiraLinhaDeLetra(linhas: string[]): string {
   for (const l of linhas) {
     const t = l.trim();
     if (!t) continue;
     if (ehLinhaDeAcordes(t)) continue;
     if (/^\[.*\]$/.test(t)) continue;
+
+    const semRotulo = t.replace(/^(intro|introdu[çc][ãa]o|solo|final|coda|ponte)\s*:?\s*/i, '');
+    const pedacos = semRotulo.split(/\s+/).filter(Boolean);
+    const acordes = pedacos.filter((p) => ehAcorde(p) || ehSimboloNeutro(p)).length;
+    if (pedacos.length >= 2 && acordes / pedacos.length >= 0.6) continue;
+
     return t.replace(/\s+/g, ' ').slice(0, 60);
   }
   return '';
@@ -145,7 +189,14 @@ function montarCanto(
   // Corta o vazio das pontas sem mexer no meio, que é alinhamento.
   while (corpo.length && !corpo[0].trim()) corpo.shift();
   while (corpo.length && !corpo[corpo.length - 1].trim()) corpo.pop();
-  if (corpo.length === 0) return null;
+
+  // Um título anunciado e nada embaixo dele acontece de verdade: num arquivo
+  // de missa apareceu "CANTO SANTO" seguido só de parágrafos vazios. Sumir com
+  // ele em silêncio é o pior desfecho — a pessoa procura o Santo na hora da
+  // missa e não acha. Ele volta na lista, vazio e desmarcado, dizendo por quê.
+  //
+  // Já um trecho sem título e sem conteúdo é só sujeira entre dois cantos.
+  if (corpo.length === 0 && !momento && !tituloDoCabecalho) return null;
 
   const texto = corpo.join('\n');
   const cifra = analisarCifra(texto, 'C', 'manual');
@@ -169,7 +220,7 @@ function montarCanto(
 export function dividirEmCantos(texto: string): CantoDetectado[] {
   const linhas = texto.split('\n');
 
-  const marcos: { indice: number; momento: string; resto: string }[] = [];
+  const marcos: { indice: number; momento: string | null; resto: string }[] = [];
   linhas.forEach((linha, i) => {
     const cab = lerCabecalhoDeMomento(linha);
     if (!cab) return;
@@ -187,7 +238,11 @@ export function dividirEmCantos(texto: string): CantoDetectado[] {
     // no arquivo de verdade sempre há uma linha em branco entre o acorde e a
     // letra. Olhando só uma linha acima, isto funcionava com texto colado e
     // falhava com todo .docx — que é justamente o caminho principal.
-    if (ehLinhaDeAcordes(ultimaLinhaComTexto(linhas, i))) return;
+    // A guarda vale para o rótulo solto. Um "CANTO: ..." escrito por extenso
+    // é anúncio explícito e não precisa dela — e quem escreve assim às vezes
+    // encosta o título na última linha do canto anterior.
+    const explicito = /^\s*CANTO\b/i.test(linha);
+    if (!explicito && ehLinhaDeAcordes(ultimaLinhaComTexto(linhas, i))) return;
 
     marcos.push({ indice: i, momento: cab.momento, resto: cab.resto });
   });
