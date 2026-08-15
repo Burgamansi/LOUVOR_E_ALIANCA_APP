@@ -1,13 +1,18 @@
-// Missas de junho a agosto de 2026 — os mesmos dados do seed do Turso
-// (db/seed/0002_seed.sql), embarcados como fallback.
+// O acervo de missas — 2025 inteiro e janeiro a agosto de 2026 — embarcado
+// como fallback dos mesmos dados do seed do Turso (db/seed/0002_seed.sql).
 //
 // Por que embarcar: enquanto o Turso não estiver ligado na Vercel, /api/agenda
 // devolve erro e a tela ficaria vazia. Com o fallback, a listagem funciona no
 // primeiro deploy e passa a ler do banco assim que ele responder — sem trocar
 // uma linha de componente.
 //
-// As datas vêm do calendário litúrgico de 2026 (Ano A, contado a partir de
-// Cristo Rei em 22/11/2026), não do nome das pastas do Drive.
+// As datas vêm do calendário litúrgico (Páscoa em 20/04/2025 e 05/04/2026,
+// virada do Ano C para o Ano A no Advento de 2025), não do nome das pastas do
+// Drive, que é inconsistente. Cada uma foi conferida contra a data de
+// modificação da projeção no Drive, que é sempre salva na véspera.
+//
+// A ordem deste array é a ordem em que o acervo foi varrido, mês a mês. Quem
+// precisa de ordem cronológica usa MISSAS_POR_DATA, logo abaixo da lista.
 
 export type TipoArquivoMissa = 'pdf' | 'docx' | 'pptx';
 
@@ -1020,4 +1025,54 @@ export function mesDaMissa(iso: string): string {
 export function tamanhoLegivel(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${Math.round(bytes / 1024)} KB`;
+}
+
+// ── Navegação pelo acervo ──────────────────────────────────────────────────
+//
+// Com 14 missas de um trimestre, a tela podia listar tudo de uma vez e ter os
+// três meses escritos à mão nos filtros. Com dois anos de acervo isso não se
+// sustenta: o filtro "junho" passaria a misturar 2025 com 2026, e janeiro de
+// 2025 não teria botão nenhum. Daqui para frente os filtros saem dos dados.
+
+export function anoDaMissa(iso: string): number {
+  return Number(iso.slice(0, 4));
+}
+
+/** O acervo em ordem cronológica inversa — a celebração mais recente primeiro. */
+export const MISSAS_POR_DATA: Missa[] = [...MISSAS].sort((a, b) => b.data.localeCompare(a.data));
+
+/** Os anos presentes no acervo, do mais recente para o mais antigo. */
+export const ANOS_DO_ACERVO: number[] =
+  [...new Set(MISSAS.map((m) => anoDaMissa(m.data)))].sort((a, b) => b - a);
+
+/** Os meses com celebração num dado ano, em ordem de calendário. */
+export function mesesDoAno(ano: number): string[] {
+  const numeros = new Set(
+    MISSAS.filter((m) => anoDaMissa(m.data) === ano).map((m) => Number(m.data.slice(5, 7)))
+  );
+  return [...numeros].sort((a, b) => a - b).map((n) => MESES[n - 1]);
+}
+
+/**
+ * A celebração que a tela deve abrir sozinha: a de hoje, se houver, senão a
+ * mais próxima no tempo — para frente ou para trás, o que estiver mais perto.
+ *
+ * Antes a tela abria a última do array, que era a última que eu tinha
+ * cadastrado. Numa lista de 82 isso é um card aleatório no meio da rolagem.
+ */
+export function missaMaisProxima(hojeIso: string, lista: Missa[] = MISSAS): Missa | null {
+  if (lista.length === 0) return null;
+  const alvo = Date.parse(`${hojeIso}T00:00:00Z`);
+  return lista.reduce((melhor, m) => {
+    const d = Math.abs(Date.parse(`${m.data}T00:00:00Z`) - alvo);
+    const dMelhor = Math.abs(Date.parse(`${melhor.data}T00:00:00Z`) - alvo);
+    return d < dMelhor ? m : melhor;
+  });
+}
+
+/** '2026-08-15', no fuso do aparelho — sem passar por toISOString(), que é UTC. */
+export function hojeIso(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
