@@ -106,6 +106,53 @@ export const MISSAS: Missa[] = [
       A('pptx', '1mOvDYauyb_AFgvR3tAuC7Hth-45lMVuP', 'Projeção',         52629116),
     ],
   },
+  // ── Janeiro de 2025 ────────────────────────────────────────────────────
+  // Um nível a mais de pasta no Drive (MISSAS_2025 › Janeiro › JANEIRO_2025 ›
+  // celebração), com a data no nome de cada uma. Mês incompleto: três das
+  // quatro celebrações têm só parte do material.
+  {
+    slug: '2025-01-05-epifania-do-senhor', data: '2025-01-05', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Epifania do Senhor',
+    tituloExibicao: 'Solenidade da Epifania do Senhor',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Data no nome da pasta. Única celebração completa de janeiro de 2025.',
+    arquivos: [
+      A('pdf',  '1orahCEc4bhq6VkfqrdAAqNKmr1XkXb6v', 'Roteiro',            334093),
+      A('docx', '1V3npKKGCrbqj-juWwDjrzs6n9kio6ruK', 'Texto de trabalho',  509856),
+      A('pptx', '1COd8p34vX6NxdzNqBnJ_CjPxaDbdNxKo', 'Projeção',          7881568),
+    ],
+  },
+  {
+    slug: '2025-01-12-batismo-do-senhor', data: '2025-01-12', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: 'Festa do Batismo do Senhor',
+    tituloExibicao: 'Festa do Batismo do Senhor',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Só a projeção, sem roteiro nem texto. O arquivo diz "2025.01.11" e a pasta diz "2025.01.12"; foi modificado em janeiro de 2026, o que sugere que a mesma projeção foi reaproveitada no ano seguinte.',
+    arquivos: [
+      A('pptx', '1AqQaIOXI7KFBKIFiXfGHiEA7kpnMtTtp', 'Projeção',         13928156),
+    ],
+  },
+  {
+    slug: '2025-01-19-2-domingo-tempo-comum', data: '2025-01-19', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '2º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 2º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Sem texto de trabalho no Drive — só roteiro e projeção.',
+    arquivos: [
+      A('pdf',  '1UppwZJVk3t09CWhNWBwOHTRpBJaNc8Bm', 'Roteiro',            290304),
+      A('pptx', '121PKSLE5tKhbL58Sjz-gdi7wGTi8zL67', 'Projeção',         15126755),
+    ],
+  },
+  {
+    slug: '2025-01-26-3-domingo-tempo-comum', data: '2025-01-26', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '3º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 3º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Só a projeção, sem roteiro nem texto no Drive.',
+    arquivos: [
+      A('pptx', '1F9j6m89nY4OdlJT0qp3bpUrPyKQFNLnw', 'Projeção',         32059040),
+    ],
+  },
   // ── Semana Santa e Tempo Pascal de 2025 ────────────────────────────────
   // Páscoa em 20/04/2025. As datas vêm do calendário e, quando existe, do
   // nome da pasta ou do arquivo.
