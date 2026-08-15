@@ -7,9 +7,15 @@
 // linhas de acorde" e deixar corrigir do que salvar uma cifra torta que só vai
 // dar problema na hora de tocar.
 
-import { analisarCifra, ehLinhaDeAcordes } from './parser';
+import { analisarCifra, deduzirTom, ehLinhaDeAcordes } from './parser';
 import { ehAcorde } from './acordes';
+import { dividirEmCantos } from './cantos';
+import type { CantoDetectado } from './cantos';
 import type { Cifra } from './tipos';
+
+// deduzirTom mora no parser, que é onde ela opera (sobre uma Cifra), mas
+// continua saindo daqui para quem já a importava deste módulo.
+export { deduzirTom };
 
 export interface DiagnosticoImportacao {
   /** Texto já normalizado, pronto para o parser e para edição manual. */
@@ -20,6 +26,11 @@ export interface DiagnosticoImportacao {
   linhasDeAcorde: number;
   acordesDistintos: number;
   secoes: string[];
+  /**
+   * Os cantos encontrados dentro do arquivo. Um arquivo de missa traz oito ou
+   * dez; um arquivo de uma música só traz um, e aí o fluxo é o de sempre.
+   */
+  cantos: CantoDetectado[];
   /** O que pode ter se perdido. Vazio = importação limpa. */
   avisos: string[];
   origem: 'docx' | 'txt' | 'colado';
@@ -52,35 +63,6 @@ export function normalizarTexto(bruto: string): string {
     .join('\n')
     .replace(/\n{4,}/g, '\n\n\n')                        // respiro, sem buraco
     .replace(/^\n+/, '');
-}
-
-/**
- * Deduz o tom.
- *
- * Heurística de cifra popular, nesta ordem: o último acorde da música é quase
- * sempre a tônica; se não der, o primeiro. É palpite declarado como palpite — a
- * tela mostra "achei que é G" com o seletor do lado.
- */
-export function deduzirTom(cifra: Cifra, padrao = 'C'): string {
-  const acordes: string[] = [];
-  for (const linha of cifra.linhas) {
-    if (linha.tipo === 'letra' || linha.tipo === 'acordes') {
-      for (const a of linha.acordes) acordes.push(a.acorde);
-    }
-  }
-  if (acordes.length === 0) return padrao;
-
-  const limpar = (a: string) => a.split('/')[0];
-  const ultimo = limpar(acordes[acordes.length - 1]);
-  const primeiro = limpar(acordes[0]);
-
-  // Menor continua menor: 'Am7' vira 'Am', 'Cmaj7' vira 'C'.
-  const raiz = (a: string) => {
-    const m = /^([A-G][#b]?)(m(?!aj))?/.exec(a);
-    return m ? m[1] + (m[2] ?? '') : a;
-  };
-
-  return raiz(ultimo) || raiz(primeiro) || padrao;
 }
 
 function analisarConteudo(texto: string, origem: DiagnosticoImportacao['origem']): DiagnosticoImportacao {
@@ -122,6 +104,17 @@ function analisarConteudo(texto: string, origem: DiagnosticoImportacao['origem']
     avisos.push('Nenhuma marcação de seção ([Intro], [Refrão]) foi encontrada — a cifra vai aparecer corrida.');
   }
 
+  const cantos = dividirEmCantos(texto);
+
+  // Vale a pena avisar só quando o arquivo é claramente uma missa inteira e
+  // mesmo assim não deu para separar: um arquivo de uma música só cai aqui
+  // legitimamente, e não é problema nenhum.
+  if (cantos.length === 1 && linhas.length > 80) {
+    avisos.push(
+      'O arquivo é longo mas não encontrei os nomes dos momentos da missa (ENTRADA, OFERTÓRIO, SANTO…) — ele entra como um canto só. Se são vários, escreva o momento numa linha sozinha antes de cada um e importe de novo.'
+    );
+  }
+
   return {
     texto,
     cifra,
@@ -129,6 +122,7 @@ function analisarConteudo(texto: string, origem: DiagnosticoImportacao['origem']
     linhasDeAcorde,
     acordesDistintos: distintos.size,
     secoes,
+    cantos,
     avisos,
     origem,
   };

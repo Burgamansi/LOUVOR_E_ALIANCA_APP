@@ -108,3 +108,32 @@ export function paraTexto(cifra: Cifra): string {
     .flatMap(l => [l.acordes, l.letra].filter((x): x is string => x !== null))
     .join('\n');
 }
+
+/**
+ * Deduz o tom.
+ *
+ * Heurística de cifra popular, nesta ordem: o último acorde da música é quase
+ * sempre a tônica; se não der, o primeiro. É palpite declarado como palpite — a
+ * tela mostra "achei que é G" com o seletor do lado.
+ */
+export function deduzirTom(cifra: Cifra, padrao = 'C'): string {
+  const acordes: string[] = [];
+  for (const linha of cifra.linhas) {
+    if (linha.tipo === 'letra' || linha.tipo === 'acordes') {
+      for (const a of linha.acordes) acordes.push(a.acorde);
+    }
+  }
+  if (acordes.length === 0) return padrao;
+
+  const limpar = (a: string) => a.split('/')[0];
+  const ultimo = limpar(acordes[acordes.length - 1]);
+  const primeiro = limpar(acordes[0]);
+
+  // Menor continua menor: 'Am7' vira 'Am', 'Cmaj7' vira 'C'.
+  const raiz = (a: string) => {
+    const m = /^([A-G][#b]?)(m(?!aj))?/.exec(a);
+    return m ? m[1] + (m[2] ?? '') : a;
+  };
+
+  return raiz(ultimo) || raiz(primeiro) || padrao;
+}
