@@ -38,6 +38,65 @@ const A = (tipo: TipoArquivoMissa, driveFileId: string, nomeExibicao: string, ta
 const LOCAL = 'Paróquia São Judas Tadeu — Americana/SP';
 
 export const MISSAS: Missa[] = [
+  // ── Outubro de 2025 — mês do padroeiro ─────────────────────────────────
+  {
+    slug: '2025-10-05-27-domingo-tempo-comum', data: '2025-10-05', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '27º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 27º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    arquivos: [
+      A('pdf',  '1Kso3KklK19Ud0z5f1uxC8_oiXZl4N8ah', 'Roteiro',            428224),
+      A('docx', '1HKaQ6C7K_bFzCKsoNBpEwFihxsto5Q4g', 'Texto de trabalho',  150486),
+      A('pptx', '1WjSRxoNOiggT4FxI4Z9K3EMFXqlyiSrb', 'Projeção',         25167689),
+    ],
+  },
+  {
+    slug: '2025-10-12-nossa-senhora-aparecida', data: '2025-10-12', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Nossa Senhora Aparecida, Padroeira do Brasil',
+    tituloExibicao: 'Solenidade de Nossa Senhora Aparecida',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'A pasta guarda também "Sobe Jerusalém.pptx", um canto avulso — ignorado.',
+    arquivos: [
+      A('pdf',  '1wZ67_aclubpVP8EGABU-MpdyJfWQE0fi', 'Roteiro',            412348),
+      A('docx', '1XkDt8ClLviNaAnk5lAiXuKVQ9I5eO15P', 'Texto de trabalho',  146566),
+      A('pptx', '1ApwojK0-DYr2gzg2T5sxP1Iv6ZQ_17Vr', 'Projeção',         25498202),
+    ],
+  },
+  {
+    slug: '2025-10-19-29-domingo-tempo-comum', data: '2025-10-19', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '29º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 29º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    arquivos: [
+      A('pdf',  '1haxmRHDYxbN4Em4F6kJ0IA07lm-td1xO', 'Roteiro',            439268),
+      A('docx', '1NDZ68x1q8fiomgAP36mWzO0BXjVFW70t', 'Texto de trabalho',  151451),
+      A('pptx', '1-HRuGED0tWa58w5q5xtNdx0X0WQkQGo9', 'Projeção',         28896586),
+    ],
+  },
+  {
+    slug: '2025-10-21-novena-sao-judas-tadeu', data: '2025-10-21', hora: '19:30', tipo: 'solenidade',
+    tituloLiturgico: 'Novena de São Judas Tadeu — 3ª feira da 29ª semana',
+    tituloExibicao: 'Novena de São Judas Tadeu',
+    cor: 'vermelho', status: 'publicada', local: LOCAL,
+    observacao: 'Celebração de semana, na novena do padroeiro. Horário a confirmar com a coordenação.',
+    arquivos: [
+      A('pdf',  '1IQodsy_scu0jN9OxxGesWgtCXZvNQI_0', 'Roteiro',            396262),
+      A('docx', '1_HLpltmkYMwTbsiKQJf8e7ZL7HsuEn69', 'Texto de trabalho',  149291),
+      A('pptx', '1memY0PRlmMrCBTtWTNOenp6DeVMXjmH9', 'Projeção',         27601859),
+    ],
+  },
+  {
+    slug: '2025-10-26-30-domingo-tempo-comum', data: '2025-10-26', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '30º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 30º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Roteiro e texto são os mesmos arquivos da Novena de São Judas Tadeu (mesmo tamanho).',
+    arquivos: [
+      A('pdf',  '1y6D5oMxYcAkOYgGi79r4BvQXIlhym-Qh', 'Roteiro',            396262),
+      A('docx', '1FAd90KVXvgpX2jqt_TpbeG7quEJr56su', 'Texto de trabalho',  149291),
+      A('pptx', '1F1GgJjkr8WQSSPgtjAF4jWXtZc-EPqHf', 'Projeção',         32993206),
+    ],
+  },
   // ── Novembro de 2025 — fim do Ano C ────────────────────────────────────
   {
     slug: '2025-11-02-finados', data: '2025-11-02', hora: '09:00', tipo: 'solenidade',
