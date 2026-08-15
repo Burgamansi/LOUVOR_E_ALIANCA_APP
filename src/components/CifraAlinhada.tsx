@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { analisarCifra } from '../lib/cifras/parser';
 import { transporCifra } from '../lib/cifras/render';
-import { tomTransposto, prefereBemol } from '../lib/cifras/acordes';
+import { tomEscrito } from '../lib/cifras/acordes';
 
 interface CifraAlinhadaProps {
   texto: string;
@@ -23,10 +23,9 @@ export function CifraAlinhada({ texto, tomOriginal, semitons, className = '' }: 
   const cifra = useMemo(() => {
     const base = analisarCifra(texto, tomOriginal || 'C', 'manual');
     if (semitons === 0) return base;
-    const destino = tomTransposto(base.tomOriginal, semitons, prefereBemol(
-      tomTransposto(base.tomOriginal, semitons, false)
-    ));
-    return transporCifra(base, destino);
+    // O destino sai na grafia da tela (Ab, não G#) e é ele que decide se os
+    // acordes saem com bemol — a mesma decisão que a barra de tons exibe.
+    return transporCifra(base, tomEscrito(base.tomOriginal, semitons));
   }, [texto, tomOriginal, semitons]);
 
   return (

@@ -1,5 +1,6 @@
 import React from 'react';
 import { TabType } from '../types';
+import { linkGrupoWhatsApp } from '../lib/whatsapp';
 import type { PerfilMinisterio } from './ModalPerfil';
 
 interface SidebarProps {
@@ -7,9 +8,15 @@ interface SidebarProps {
   onTabChange: (tab: TabType) => void;
   perfil: PerfilMinisterio;
   onAbrirPerfil: () => void;
+  /** Convite do grupo da equipe, se configurado. */
+  grupo?: string | null;
+  nomeGrupo?: string;
+  onAbrirAjuda?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, perfil, onAbrirPerfil }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentTab, onTabChange, perfil, onAbrirPerfil, grupo, nomeGrupo, onAbrirAjuda,
+}) => {
   const userAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuADYL5Z5EOImwC68frrAqi9_9IZ3SN9jCK38dBqhDNHgLfomLwm_BJc63lDoUBdb-73MlV0kdkU3sWm45FNlJ4-IZ_rspRvZxKbtJvtTKP1gyIO-PHUXhJ7UISIoh1MVjvbItoKQX2cc5a8woFuzBM3JR-ZqznfLAFNKWvrRX-_ApMblnMKMAKlVtfPbPMo7VjWW7aBNcnyNEtLWepYq-0MJkEJZ-JaQjWLbUKo4eENpsN9aQsDKovquaH_St3bFK60HBCH0wk2GNUH";
 
   const navItems: { tab: TabType; label: string; icon: string }[] = [
@@ -28,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, perfi
       {/* Header / Logo */}
       <div className="shrink-0 p-6 flex flex-col items-center text-center gap-2 border-b border-[#7A2332]/10 bg-gradient-to-b from-[#7A2332]/5 to-transparent">
         <div className="w-16 h-16 rounded-full bg-[#7A2332] text-[#FFF9F2] flex items-center justify-center shadow-md ring-2 ring-[#C9A24A] relative">
-          <span className="material-symbols-outlined text-3xl text-[#C9A24A]">church</span>
+          <span aria-hidden className="material-symbols-outlined text-3xl text-[#C9A24A]">church</span>
           <div className="absolute -bottom-1 right-0 w-6 h-6 rounded-full bg-[#C9A24A] flex items-center justify-center text-[#4D1721] text-xs shadow-xs font-bold">
             ✝
           </div>
@@ -55,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, perfi
                   : 'text-[#2D2118] hover:bg-[#F8ECE0] hover:text-[#7A2332]'
               }`}
             >
-              <span className={`material-symbols-outlined text-[22px] ${isActive ? 'text-[#C9A24A]' : 'text-[#7A2332]'}`}>
+              <span aria-hidden className={`material-symbols-outlined text-[22px] ${isActive ? 'text-[#C9A24A]' : 'text-[#7A2332]'}`}>
                 {item.icon}
               </span>
               <span className="font-body-md text-sm">{item.label}</span>
@@ -63,6 +70,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, perfi
           );
         })}
       </nav>
+
+      {/* Grupo da equipe e ajuda — logo acima do perfil, no rodapé fixo, que é
+          onde a barra lateral guarda o que é da pessoa e não do conteúdo. */}
+      <div className="shrink-0 px-4 pb-3 flex flex-col gap-1.5">
+        {linkGrupoWhatsApp(grupo) && (
+          <a
+            href={linkGrupoWhatsApp(grupo) as string}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 p-2.5 rounded-xl bg-[#25D366] text-white hover:brightness-95 transition"
+          >
+            <span aria-hidden className="material-symbols-outlined text-[20px]">group</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-bold">Grupo da equipe</span>
+              <span className="block text-[10px] opacity-90 truncate">{nomeGrupo ?? 'WhatsApp'}</span>
+            </span>
+            <span aria-hidden className="material-symbols-outlined text-base">open_in_new</span>
+          </a>
+        )}
+
+        {onAbrirAjuda && (
+          <button
+            onClick={onAbrirAjuda}
+            className="flex items-center gap-3 p-2.5 rounded-xl text-[#2D2118] hover:bg-[#F8ECE0] hover:text-[#7A2332] transition text-left cursor-pointer"
+          >
+            <span aria-hidden className="material-symbols-outlined text-[20px] text-[#7A2332]">help</span>
+            <span className="text-sm">Como usar o app</span>
+          </button>
+        )}
+      </div>
 
       {/* User Profile Footer */}
       <button
@@ -80,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, perfi
           </span>
           <span className="text-[11px] text-[#5C4A3E] truncate">{perfil.papel}</span>
         </div>
-        <span className="material-symbols-outlined text-[#7A2332] text-lg">edit</span>
+        <span aria-hidden className="material-symbols-outlined text-[#7A2332] text-lg">edit</span>
       </button>
     </aside>
   );

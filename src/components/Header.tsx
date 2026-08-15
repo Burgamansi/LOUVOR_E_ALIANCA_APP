@@ -5,9 +5,11 @@ interface HeaderProps {
   currentTab: TabType;
   onTabChange: (tab: TabType) => void;
   title: string;
+  /** Reabre a apresentação de boas-vindas. */
+  onAbrirAjuda?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ title }) => {
+export const Header: React.FC<HeaderProps> = ({ title, onAbrirAjuda }) => {
   const logoSrc = "https://images.unsplash.com/photo-1543807535-eceef0bc6599?q=80&w=200&auto=format&fit=crop";
   const userAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuADYL5Z5EOImwC68frrAqi9_9IZ3SN9jCK38dBqhDNHgLfomLwm_BJc63lDoUBdb-73MlV0kdkU3sWm45FNlJ4-IZ_rspRvZxKbtJvtTKP1gyIO-PHUXhJ7UISIoh1MVjvbItoKQX2cc5a8woFuzBM3JR-ZqznfLAFNKWvrRX-_ApMblnMKMAKlVtfPbPMo7VjWW7aBNcnyNEtLWepYq-0MJkEJZ-JaQjWLbUKo4eENpsN9aQsDKovquaH_St3bFK60HBCH0wk2GNUH";
 
@@ -31,6 +33,20 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Ajuda sempre à mão: quem pulou as boas-vindas — ou quem chegou
+              depois, no aparelho de outra pessoa — precisa de um caminho de
+              volta que não dependa de lembrar onde ficava. */}
+          {onAbrirAjuda && (
+            <button
+              onClick={onAbrirAjuda}
+              aria-label="Como usar o app"
+              title="Como usar o app"
+              className="w-9 h-9 rounded-full border border-[#7A2332]/20 bg-white text-[#7A2332] flex items-center justify-center hover:border-[#7A2332]/50 transition cursor-pointer"
+            >
+              <span aria-hidden className="material-symbols-outlined text-lg">help</span>
+            </button>
+          )}
+
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-xs font-semibold text-[#2D2118]">Ministério Louvor & Aliança</span>
             <span className="text-[10px] text-[#C9A24A] font-medium">Música & Liturgia</span>

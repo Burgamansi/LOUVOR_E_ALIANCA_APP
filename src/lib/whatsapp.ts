@@ -33,3 +33,33 @@ export function formatarBR(e164: string): string {
   if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
   return e164;
 }
+
+// ── Grupo da equipe ────────────────────────────────────────────────────────
+//
+// Grupo é outro endereço: `chat.whatsapp.com/<código>`, não `wa.me/<número>`.
+// Guardamos só o código, pela mesma razão de guardar E.164 e não a máscara —
+// a URL se monta aqui e continua certa se o WhatsApp mudar o domínio.
+
+const RE_CONVITE = /^[A-Za-z0-9]{6,64}$/;
+
+/**
+ * Extrai o código de convite. Aceita a URL colada do WhatsApp, com ou sem
+ * `https://`, com ou sem parâmetros, ou o código puro.
+ * Devolve null se não parecer um convite — melhor não mostrar o botão do que
+ * mostrar um botão que abre uma página de erro na frente da equipe.
+ */
+export function codigoDoGrupo(entrada: string | null | undefined): string | null {
+  if (!entrada) return null;
+  const t = entrada.trim();
+
+  const naUrl = /chat\.whatsapp\.com\/(?:invite\/)?([A-Za-z0-9]+)/.exec(t);
+  if (naUrl) return naUrl[1];
+
+  return RE_CONVITE.test(t) ? t : null;
+}
+
+/** Monta o link do grupo. Devolve null se o convite não for válido. */
+export function linkGrupoWhatsApp(convite: string | null | undefined): string | null {
+  const codigo = codigoDoGrupo(convite);
+  return codigo ? `https://chat.whatsapp.com/${codigo}` : null;
+}

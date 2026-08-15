@@ -162,5 +162,36 @@ export function tomTransposto(tomOriginal: string, semitons: number, comBemol: b
   return escrever(novo, comBemol) + (m[3] ?? '');
 }
 
+/**
+ * Nome do tom depois de N semitons, já na grafia que o músico espera ler.
+ *
+ * A grafia sai de `TONS`, a mesma lista que o seletor de tons mostra na tela —
+ * e é por isso que ela é a fonte da verdade aqui: o que a pessoa escolhe no
+ * botão "Ab" é exatamente o que aparece escrito na cifra.
+ *
+ * O caminho óbvio — transpor com sustenido e depois perguntar se aquele tom
+ * prefere bemol — não funciona, e o erro é discreto: a resposta é sempre
+ * "não", porque a pergunta foi feita para a grafia sustenida, que por
+ * construção nunca é um tom de bemol. Subir um semitom a partir de G devolvia
+ * G#/D#/A# onde toda equipe de igreja lê Ab/Eb/Bb.
+ */
+export function tomEscrito(tomOriginal: string, semitons: number): string {
+  const m = /^([A-G])([#b♯♭]{0,2})(.*)$/.exec(tomOriginal.trim());
+  if (!m) return tomOriginal;
+
+  const pc = classeDeAltura(m[1], normalizarAlteracao(m[2]));
+  if (pc === null) return tomOriginal;
+
+  const novo = (((pc + semitons) % 12) + 12) % 12;
+  return TONS[novo] + (m[3] ?? '');     // preserva o 'm' de menor e o resto
+}
+
+/** Reduz um deslocamento qualquer ao caminho mais curto: −5 e +7 são o mesmo tom. */
+export function normalizarSemitons(semitons: number): number {
+  let d = ((semitons % 12) + 12) % 12;
+  if (d > 6) d -= 12;
+  return d;
+}
+
 /** Os 12 tons oferecidos no seletor, na grafia mais usada em cifra de igreja. */
 export const TONS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'] as const;

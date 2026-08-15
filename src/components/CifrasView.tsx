@@ -1,425 +1,505 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { LiturgicalSong, TabType } from '../types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { LiturgicalSong } from '../types';
 import {
-  KEY_LIST,
-  calculateSemitones,
-  getTransposedKeyName
-} from '../utils/chordTransposer';
+  TONS, semitonsEntre, tomEscrito, normalizarSemitons,
+} from '../lib/cifras/acordes';
+import { sugerirCapotraste } from '../lib/cifras/capotraste';
+import { useLocal } from '../hooks/useLocal';
+import { useAutoScroll, VELOCIDADE_PADRAO, DEGRAUS_VELOCIDADE } from '../hooks/useAutoScroll';
 import { CifraAlinhada } from './CifraAlinhada';
-import { CifraPainel } from './CifraPainel';
+import { ControleVelocidade } from './ControleVelocidade';
 
 interface CifrasViewProps {
   songs: LiturgicalSong[];
   selectedSong: LiturgicalSong;
   onSelectSong: (song: LiturgicalSong) => void;
   onOpenDrive: () => void;
-  onOpenAddChordModal: () => void;
+  onImportarCifra: () => void;
+  onSubstituirCifra: (song: LiturgicalSong) => void;
+  /** Avisa o App para recolher cabeçalho e navegação no modo de palco. */
+  onModoPalco: (ativo: boolean) => void;
 }
 
-export const CifrasView: React.FC<CifrasViewProps> = ({
-  songs,
-  selectedSong,
-  onSelectSong,
-  onOpenDrive,
-  onOpenAddChordModal,
-}) => {
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [semitones, setSemitones] = useState<number>(0);
-  const [isStageMode, setIsStageMode] = useState<boolean>(false);
-  const [isAutoScrolling, setIsAutoScrolling] = useState<boolean>(false);
-  const [favorites, setFavorites] = useState<string[]>(['s-1', 's-2']);
-  const [scrollSpeed] = useState<number>(40); // ms per step
-  const scrollIntervalRef = useRef<number | null>(null);
+const MOMENTOS = ['ENTRADA', 'ATO PENITENCIAL', 'GLÓRIA', 'SALMO', 'OFERTÓRIO', 'COMUNHÃO', 'FINAL'];
 
-  // Filter songs based on search query
-  const filteredSongs = songs.filter((s) => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    return (
-      s.title.toLowerCase().includes(q) ||
-      s.part.toLowerCase().includes(q) ||
-      s.key.toLowerCase().includes(q) ||
-      s.lyricsPreview.toLowerCase().includes(q) ||
-      s.fullChordText.toLowerCase().includes(q)
-    );
+type Gaveta = 'nenhuma' | 'musicas' | 'tom';
+
+/**
+ * Cifras & Repertório.
+ *
+ * A tela anterior empilhava três ferramentas que faziam a mesma coisa sem se
+ * falar: a cifra da música selecionada com um transpositor, logo abaixo um
+ * segundo painel com a *sua própria* cifra de exemplo e o *seu próprio*
+ * transpositor (e era só ali que se importava .docx — o arquivo importado
+ * nunca chegava ao repertório), e no fim um terceiro caminho para colar cifra.
+ * Quem chegava novo não tinha como saber qual dos dois seletores de tom valia.
+ *
+ * Aqui existe um estado só — a música selecionada e o tom em que ela está sendo
+ * tocada — e cada ferramenta atua sobre ele.
+ *
+ * A outra mudança é de espaço. A barra fixa ocupava cerca de 280 px: no celular
+ * a pessoa via a busca, os filtros, o seletor e a régua de tons antes do
+ * primeiro acorde. Agora a barra tem uma linha e os controles moram em gavetas
+ * que abrem sob demanda — porque a proporção certa numa tela de cifra é quase
+ * toda cifra.
+ */
+export function CifrasView({
+  songs, selectedSong, onSelectSong, onOpenDrive, onImportarCifra, onSubstituirCifra, onModoPalco,
+}: CifrasViewProps) {
+  const [gaveta, setGaveta] = useState<Gaveta>('nenhuma');
+  const [busca, setBusca] = useState('');
+  const [momento, setMomento] = useState<string | null>(null);
+  const [modoPalco, setModoPalco] = useState(false);
+  const [mostrarControle, setMostrarControle] = useState(false);
+
+  // Preferências de aparelho: sobrevivem ao fechar o app.
+  const [favoritos, setFavoritos] = useLocal<string[]>('la:cifras-favoritas', []);
+  const [velocidade, setVelocidade] = useLocal<number>('la:scroll-velocidade', VELOCIDADE_PADRAO);
+  const [tamanho, setTamanho] = useLocal<number>('la:cifra-tamanho', 1);
+  // O tom fica guardado por música: a equipe canta "Como é bom" em A há dois
+  // anos: reajustar toda missa é trabalho que o app pode poupar.
+  const [tonsSalvos, setTonsSalvos] = useLocal<Record<string, number>>('la:cifras-tom', {});
+
+  const semitons = tonsSalvos[selectedSong.id] ?? 0;
+  const tomAtual = tomEscrito(selectedSong.key, semitons);
+  const capo = sugerirCapotraste(tomAtual);
+
+  const definirSemitons = useCallback((valor: number) => {
+    setTonsSalvos((atual) => ({ ...atual, [selectedSong.id]: normalizarSemitons(valor) }));
+  }, [selectedSong.id, setTonsSalvos]);
+
+  const { rolando, alternar, parar } = useAutoScroll({
+    velocidade,
+    aoTerminar: () => setMostrarControle(true),
   });
 
-  // Toggle favorite
-  const toggleFavorite = (id: string) => {
-    setFavorites(prev =>
-      prev.includes(id) ? prev.filter(fId => fId !== id) : [...prev, id]
-    );
-  };
+  // Trocar de música com a rolagem ligada deixaria a cifra nova correndo do
+  // meio; parar é o comportamento que não surpreende.
+  useEffect(() => { parar(); }, [selectedSong.id, parar]);
 
-  const isFavorite = favorites.includes(selectedSong.id);
+  useEffect(() => { onModoPalco(modoPalco); }, [modoPalco, onModoPalco]);
+  useEffect(() => () => onModoPalco(false), [onModoPalco]);
 
-  // Reset transposition when selected song changes
+  // Atalhos de teclado — para quem ensaia com o notebook na estante.
   useEffect(() => {
-    setSemitones(0);
-  }, [selectedSong.id]);
+    const aoTeclar = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && /^(INPUT|TEXTAREA|SELECT)$/.test(alvo.tagName)) return;
 
-  // Handle auto-scroll
-  useEffect(() => {
-    if (isAutoScrolling) {
-      scrollIntervalRef.current = window.setInterval(() => {
-        window.scrollBy({ top: 1, behavior: 'auto' });
-      }, scrollSpeed);
-    } else {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
-        scrollIntervalRef.current = null;
+      if (e.key === ' ') { e.preventDefault(); alternar(); setMostrarControle(true); return; }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setVelocidade((v) => Math.min(v + 1, DEGRAUS_VELOCIDADE.length));
+        setMostrarControle(true);
+        return;
       }
-    }
-
-    return () => {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setVelocidade((v) => Math.max(v - 1, 1));
+        setMostrarControle(true);
+        return;
+      }
+      if (e.key === '+' || e.key === '=') { definirSemitons(semitons + 1); return; }
+      if (e.key === '-') { definirSemitons(semitons - 1); return; }
+      if (e.key === 'Escape') {
+        if (gaveta !== 'nenhuma') setGaveta('nenhuma');
+        else if (modoPalco) setModoPalco(false);
       }
     };
-  }, [isAutoScrolling, scrollSpeed]);
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, [alternar, definirSemitons, semitons, gaveta, modoPalco, setVelocidade]);
 
-  const handleTransposeUp = () => setSemitones(prev => prev + 1);
-  const handleTransposeDown = () => setSemitones(prev => prev - 1);
+  const filtradas = useMemo(() => {
+    const q = busca.toLowerCase().trim();
+    return songs.filter((s) => {
+      if (momento && s.part.toUpperCase() !== momento) return false;
+      if (!q) return true;
+      return (
+        s.title.toLowerCase().includes(q) ||
+        s.part.toLowerCase().includes(q) ||
+        s.key.toLowerCase().includes(q) ||
+        s.lyricsPreview.toLowerCase().includes(q) ||
+        s.fullChordText.toLowerCase().includes(q)
+      );
+    });
+  }, [songs, busca, momento]);
 
-  // Transposed song chords
+  const ehFavorita = favoritos.includes(selectedSong.id);
+  const alternarFavorita = (id: string) =>
+    setFavoritos((atual) => (atual.includes(id) ? atual.filter((f) => f !== id) : [...atual, id]));
+
+  const escalaTexto = ['text-[13px]', 'text-sm', 'text-base', 'text-lg', 'text-xl'][tamanho] ?? 'text-sm';
 
   return (
-    <div className="flex flex-col w-full pb-12">
-      {/* Search & Liturgical Floating Toolbar */}
-      <div className="sticky top-16 z-30 bg-[#FFF9F2]/95 backdrop-blur-md border-b border-[#7A2332]/15 px-4 py-3 shadow-xs">
-        <div className="flex flex-col gap-3 max-w-4xl mx-auto">
-          {/* Top Search Input Bar */}
-          <div className="relative flex items-center">
-            <span className="material-symbols-outlined absolute left-3.5 text-[#7A2332]">search</span>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Pesquisar cifra por título, momento, tom ou letra..."
-              className="w-full bg-white border border-[#7A2332]/20 rounded-xl pl-11 pr-10 py-2.5 text-sm text-[#2D2118] placeholder-[#5C4A3E] outline-none focus:border-[#7A2332] focus:ring-1 focus:ring-[#7A2332] shadow-xs"
-            />
-            {searchQuery && (
+    <div className={`flex flex-col w-full ${modoPalco ? 'pb-32' : 'pb-24'}`}>
+      {/* ── Barra do músico: uma linha, sempre visível ────────────────────── */}
+      <div
+        className={`sticky z-30 bg-[#FFF9F2]/95 backdrop-blur-md border-b border-[#7A2332]/15 ${
+          modoPalco ? 'top-0' : 'top-16 md:top-16'
+        }`}
+      >
+        <div className="max-w-4xl mx-auto px-3 sm:px-5 h-14 flex items-center gap-2">
+          {/* Seletor de música */}
+          <button
+            onClick={() => setGaveta(gaveta === 'musicas' ? 'nenhuma' : 'musicas')}
+            aria-expanded={gaveta === 'musicas'}
+            className="flex-1 min-w-0 flex items-center gap-2 h-10 px-3 rounded-xl bg-white border border-[#7A2332]/20 hover:border-[#7A2332]/50 transition text-left cursor-pointer"
+          >
+            <span aria-hidden className="material-symbols-outlined text-[#C9A24A] text-lg shrink-0">library_music</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-[#7A2332] truncate leading-tight">
+                {selectedSong.title}
+              </span>
+              <span className="block text-[10px] uppercase tracking-wider text-[#5C4A3E] truncate">
+                {selectedSong.part}
+              </span>
+            </span>
+            <span aria-hidden className="material-symbols-outlined text-[#5C4A3E] text-lg shrink-0">
+              {gaveta === 'musicas' ? 'expand_less' : 'expand_more'}
+            </span>
+          </button>
+
+          {/* Tom — o número grande é o que se procura de relance */}
+          <button
+            onClick={() => setGaveta(gaveta === 'tom' ? 'nenhuma' : 'tom')}
+            aria-expanded={gaveta === 'tom'}
+            aria-label={`Tom atual ${tomAtual}. Abrir transposição`}
+            className={`shrink-0 h-10 px-3 rounded-xl border flex items-center gap-1.5 transition cursor-pointer ${
+              semitons !== 0
+                ? 'bg-[#7A2332] text-[#FFF9F2] border-[#7A2332]'
+                : 'bg-white text-[#7A2332] border-[#7A2332]/20 hover:border-[#7A2332]/50'
+            }`}
+          >
+            <span className="font-serif text-lg font-bold leading-none">{tomAtual}</span>
+            {semitons !== 0 && (
+              <span className="text-[10px] font-bold opacity-80">
+                {semitons > 0 ? `+${semitons}` : semitons}
+              </span>
+            )}
+          </button>
+
+          {/* Rolagem */}
+          <button
+            onClick={() => { alternar(); setMostrarControle(true); }}
+            aria-label={rolando ? 'Pausar rolagem automática' : 'Iniciar rolagem automática'}
+            className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition cursor-pointer ${
+              rolando ? 'bg-[#C9A24A] text-[#4D1721]' : 'bg-white text-[#7A2332] border border-[#7A2332]/20 hover:border-[#7A2332]/50'
+            }`}
+          >
+            <span aria-hidden className="material-symbols-outlined text-xl">{rolando ? 'pause' : 'play_arrow'}</span>
+          </button>
+
+          {/* Palco */}
+          <button
+            onClick={() => { setModoPalco(!modoPalco); setGaveta('nenhuma'); }}
+            aria-label={modoPalco ? 'Sair do modo de palco' : 'Modo de palco'}
+            className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition cursor-pointer ${
+              modoPalco ? 'bg-[#7A2332] text-[#FFF9F2]' : 'bg-white text-[#7A2332] border border-[#7A2332]/20 hover:border-[#7A2332]/50'
+            }`}
+          >
+            <span aria-hidden className="material-symbols-outlined text-xl">
+              {modoPalco ? 'close_fullscreen' : 'fullscreen'}
+            </span>
+          </button>
+        </div>
+
+        {/* ── Gaveta: escolher a música ──────────────────────────────────── */}
+        {gaveta === 'musicas' && (
+          <div className="border-t border-[#7A2332]/10 bg-white">
+            <div className="max-w-4xl mx-auto px-3 sm:px-5 py-3 flex flex-col gap-2.5">
+              <div className="relative flex items-center">
+                <span aria-hidden className="material-symbols-outlined absolute left-3 text-[#7A2332] text-lg">search</span>
+                <input
+                  autoFocus
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar por título, tom ou trecho da letra…"
+                  className="w-full bg-[#FFF9F2] border border-[#7A2332]/20 rounded-xl pl-10 pr-9 py-2.5 text-sm text-[#2D2118] outline-none focus:border-[#7A2332]"
+                />
+                {busca && (
+                  <button
+                    onClick={() => setBusca('')}
+                    aria-label="Limpar busca"
+                    className="absolute right-2 p-1 text-[#5C4A3E] hover:text-[#7A2332] cursor-pointer"
+                  >
+                    <span aria-hidden className="material-symbols-outlined text-lg">close</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+                {MOMENTOS.map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMomento(momento === m ? null : m)}
+                    className={`shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-full border transition cursor-pointer ${
+                      momento === m
+                        ? 'bg-[#7A2332] text-white border-[#7A2332]'
+                        : 'bg-white text-[#5C4A3E] border-[#7A2332]/15 hover:border-[#7A2332]/40'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+
+              <ul className="flex flex-col gap-1 max-h-[45vh] overflow-y-auto -mx-1 px-1">
+                {filtradas.length === 0 && (
+                  <li className="text-sm text-[#5C4A3E] italic text-center py-6">
+                    Nenhuma cifra encontrada.
+                  </li>
+                )}
+                {filtradas.map((musica) => {
+                  const ativa = musica.id === selectedSong.id;
+                  const tomSalvo = tonsSalvos[musica.id] ?? 0;
+                  return (
+                    <li key={musica.id} className="flex items-center gap-1">
+                      <button
+                        onClick={() => { onSelectSong(musica); setGaveta('nenhuma'); }}
+                        className={`flex-1 min-w-0 flex items-center gap-2.5 p-2.5 rounded-xl text-left transition cursor-pointer ${
+                          ativa ? 'bg-[#7A2332] text-white' : 'bg-[#FFF9F2] hover:bg-[#7A2332]/10 text-[#2D2118]'
+                        }`}
+                      >
+                        <span className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
+                          ativa ? 'bg-[#C9A24A] text-[#4D1721]' : 'bg-[#7A2332]/10 text-[#7A2332]'
+                        }`}>
+                          {musica.number}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-xs font-bold truncate">{musica.title}</span>
+                          <span className={`block text-[10px] truncate ${ativa ? 'text-amber-100' : 'text-[#5C4A3E]'}`}>
+                            {musica.part} · tom {tomEscrito(musica.key, tomSalvo)}
+                            {tomSalvo !== 0 && ' (transposta)'}
+                          </span>
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => alternarFavorita(musica.id)}
+                        aria-label={favoritos.includes(musica.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                        className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition cursor-pointer ${
+                          favoritos.includes(musica.id) ? 'text-[#C9A24A]' : 'text-[#5C4A3E]/40 hover:text-[#C9A24A]'
+                        }`}
+                      >
+                        <span aria-hidden className="material-symbols-outlined text-lg">
+                          {favoritos.includes(musica.id) ? 'star' : 'star_border'}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+
               <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 text-[#5C4A3E] hover:text-[#7A2332] p-1 cursor-pointer"
-                title="Limpar pesquisa"
+                onClick={() => { setGaveta('nenhuma'); onImportarCifra(); }}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border-2 border-dashed border-[#7A2332]/25 text-[#7A2332] text-xs font-bold hover:bg-[#7A2332]/5 transition cursor-pointer"
               >
-                <span className="material-symbols-outlined text-lg">close</span>
+                <span aria-hidden className="material-symbols-outlined text-lg">upload_file</span>
+                Importar cifra do Word ou colar texto
               </button>
-            )}
-          </div>
-
-          {/* Quick Filter Tags & Results Badge */}
-          <div className="flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide py-0.5">
-            <div className="flex items-center gap-1.5 min-w-max">
-              {['ENTRADA', 'ATO PENITENCIAL', 'GLÓRIA', 'SALMO', 'OFERTÓRIO', 'COMUNHÃO'].map((partTag) => (
-                <button
-                  key={partTag}
-                  onClick={() => setSearchQuery(searchQuery === partTag ? '' : partTag)}
-                  className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
-                    searchQuery.toUpperCase() === partTag
-                      ? 'bg-[#7A2332] text-white border-[#7A2332]'
-                      : 'bg-white text-[#5C4A3E] border-[#7A2332]/15 hover:bg-[#7A2332]/10'
-                  }`}
-                >
-                  {partTag}
-                </button>
-              ))}
             </div>
-            {searchQuery && (
-              <span className="text-[10px] font-bold text-[#7A2332] bg-[#C9A24A]/20 border border-[#C9A24A]/30 px-2.5 py-1 rounded-full whitespace-nowrap">
-                {filteredSongs.length} {filteredSongs.length === 1 ? 'encontrada' : 'encontradas'}
-              </span>
-            )}
           </div>
+        )}
 
-          {/* Song Selector Dropdown */}
-          <div className="flex items-center justify-between gap-2">
-            <select
-              value={selectedSong.id}
-              onChange={(e) => {
-                const song = songs.find(s => s.id === e.target.value);
-                if (song) onSelectSong(song);
-              }}
-              className="flex-1 bg-white text-[#7A2332] font-semibold text-sm rounded-xl p-2.5 border border-[#7A2332]/20 outline-none cursor-pointer"
-            >
-              {filteredSongs.length > 0 ? (
-                filteredSongs.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.number}. {s.title} ({s.part}) - Tom: {s.key} {favorites.includes(s.id) ? '★' : ''}
-                  </option>
-                ))
-              ) : (
-                <option value="" disabled>Nenhuma cifra encontrada para "{searchQuery}"</option>
-              )}
-            </select>
+        {/* ── Gaveta: transposição ───────────────────────────────────────── */}
+        {gaveta === 'tom' && (
+          <div className="border-t border-[#7A2332]/10 bg-white">
+            <div className="max-w-4xl mx-auto px-3 sm:px-5 py-3 flex flex-col gap-3">
+              {/* Estado atual + passo de meio tom, lado a lado */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-[#5C4A3E]">
+                    Escrita em {selectedSong.key}
+                  </p>
+                  <p className="font-serif text-2xl font-bold text-[#7A2332] leading-tight">
+                    Tocando em {tomAtual}
+                  </p>
+                </div>
 
-            {/* Favorite Button */}
-            <button
-              onClick={() => toggleFavorite(selectedSong.id)}
-              className={`p-2.5 rounded-xl border transition-colors cursor-pointer flex items-center justify-center ${
-                isFavorite
-                  ? 'bg-[#C9A24A] text-white border-[#C9A24A]'
-                  : 'bg-white text-[#5C4A3E] border-[#7A2332]/20 hover:text-[#7A2332]'
-              }`}
-              title={isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
-            >
-              <span className="material-symbols-outlined text-lg">
-                {isFavorite ? 'star' : 'star_border'}
-              </span>
-            </button>
-          </div>
-
-          {/* Transposition & Key Selector Toolbar */}
-          <div className="bg-white rounded-2xl p-3 sm:p-4 border border-[#7A2332]/15 shadow-xs flex flex-col gap-3">
-            {/* Top Row: Current Transposed Key Badge & Direct Key Dropdown */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#C9A24A] text-xl">tune</span>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-[#5C4A3E] uppercase tracking-wider">
-                    Tom Original: <strong className="text-[#2D2118]">{selectedSong.key}</strong>
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold text-[#7A2332]">
-                      Tom Transposto: {getTransposedKeyName(selectedSong.key, semitones)}
-                    </span>
-                    {semitones !== 0 && (
-                      <span className="text-[10px] text-[#2D2118] bg-[#C9A24A]/30 px-2 py-0.5 rounded-full font-bold border border-[#C9A24A]/40">
-                        {semitones > 0 ? `+${semitones}` : semitones} {Math.abs(semitones) === 1 ? 'semitom' : 'semitons'}
-                      </span>
-                    )}
-                  </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => definirSemitons(semitons - 1)}
+                    aria-label="Descer meio tom"
+                    className="w-11 h-11 rounded-full border border-[#7A2332]/25 text-[#7A2332] flex items-center justify-center hover:bg-[#7A2332]/10 transition cursor-pointer"
+                  >
+                    <span aria-hidden className="material-symbols-outlined">remove</span>
+                  </button>
+                  <button
+                    onClick={() => definirSemitons(semitons + 1)}
+                    aria-label="Subir meio tom"
+                    className="w-11 h-11 rounded-full border border-[#7A2332]/25 text-[#7A2332] flex items-center justify-center hover:bg-[#7A2332]/10 transition cursor-pointer"
+                  >
+                    <span aria-hidden className="material-symbols-outlined">add</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Direct Target Key Selector Dropdown */}
-              <div className="flex items-center gap-1.5">
-                <label className="text-xs font-semibold text-[#5C4A3E] hidden sm:inline">Transpor para:</label>
-                <select
-                  value={getTransposedKeyName(selectedSong.key, semitones).replace(/m$/, '')}
-                  onChange={(e) => {
-                    const targetKey = e.target.value;
-                    const newSemitones = calculateSemitones(selectedSong.key, targetKey);
-                    setSemitones(newSemitones);
-                  }}
-                  className="bg-[#FFF9F2] text-[#7A2332] font-bold text-xs rounded-xl px-3 py-1.5 border border-[#7A2332]/20 outline-none cursor-pointer hover:border-[#7A2332]"
-                >
-                  {KEY_LIST.map((keyNote) => (
-                    <option key={keyNote} value={keyNote}>
-                      Tom: {keyNote}
-                    </option>
-                  ))}
-                </select>
+              {/* Os 12 tons */}
+              <div className="grid grid-cols-6 gap-1.5">
+                {TONS.map((t) => {
+                  const ativo = t === tomAtual.replace(/m$/, '');
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => definirSemitons(semitonsEntre(selectedSong.key, t))}
+                      className={`h-10 rounded-xl text-sm font-bold border transition cursor-pointer ${
+                        ativo
+                          ? 'bg-[#7A2332] text-[#FFF9F2] border-[#7A2332]'
+                          : 'bg-[#FFF9F2] text-[#2D2118] border-[#7A2332]/15 hover:border-[#7A2332]/50'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
 
-                {semitones !== 0 && (
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                {/* Capotraste: a pergunta que o violonista faz sozinho toda vez */}
+                {capo ? (
+                  <p className="text-xs text-[#5C4A3E] flex items-center gap-1.5">
+                    <span aria-hidden className="material-symbols-outlined text-[#C9A24A] text-base">straighten</span>
+                    Capotraste na <strong className="text-[#7A2332]">{capo.casa}ª casa</strong> e toque as formas de{' '}
+                    <strong className="text-[#7A2332]">{capo.forma}</strong>
+                  </p>
+                ) : (
+                  <p className="text-xs text-[#5C4A3E] flex items-center gap-1.5">
+                    <span aria-hidden className="material-symbols-outlined text-[#C9A24A] text-base">check_circle</span>
+                    Tom de forma fácil no violão, sem capotraste.
+                  </p>
+                )}
+
+                {semitons !== 0 && (
                   <button
-                    onClick={() => setSemitones(0)}
-                    className="text-[10px] font-bold text-[#7A2332] bg-[#FFF9F2] hover:bg-[#7A2332]/10 px-2.5 py-1.5 rounded-xl border border-[#7A2332]/20 cursor-pointer flex items-center gap-1"
-                    title="Restaurar tom original"
+                    onClick={() => definirSemitons(0)}
+                    className="text-xs font-bold text-[#7A2332] underline decoration-dotted cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-xs">restart_alt</span>
-                    Reset
+                    voltar ao tom original ({selectedSong.key})
                   </button>
                 )}
               </div>
-            </div>
 
-            {/* Middle Row: Quick Chromatic Key Pills */}
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-1">
-              <span className="text-[10px] font-bold text-[#5C4A3E] mr-1 min-w-max uppercase tracking-wider">Acesso Rápido:</span>
-              {KEY_LIST.map((keyNote) => {
-                const isSelected = getTransposedKeyName(selectedSong.key, semitones).replace(/m$/, '').toUpperCase() === keyNote.toUpperCase();
-                return (
-                  <button
-                    key={keyNote}
-                    onClick={() => {
-                      const newSemitones = calculateSemitones(selectedSong.key, keyNote);
-                      setSemitones(newSemitones);
-                    }}
-                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer min-w-[32px] text-center ${
-                      isSelected
-                        ? 'bg-[#7A2332] text-white border-[#7A2332] shadow-xs scale-105'
-                        : 'bg-[#FFF9F2] text-[#2D2118] border-[#7A2332]/15 hover:bg-[#7A2332]/10'
-                    }`}
-                  >
-                    {keyNote}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Bottom Row: Stepper Buttons, Audio Reference & Auto-Scroll */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#7A2332]/10 pt-2">
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={handleTransposeDown}
-                  className="px-3 py-1.5 bg-[#FFF9F2] text-[#7A2332] rounded-xl border border-[#7A2332]/20 hover:bg-[#7A2332]/10 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  title="Diminuir meio tom (-1)"
-                >
-                  <span className="material-symbols-outlined text-sm">remove</span>
-                  -1 Semitom
-                </button>
-                <button
-                  onClick={handleTransposeUp}
-                  className="px-3 py-1.5 bg-[#FFF9F2] text-[#7A2332] rounded-xl border border-[#7A2332]/20 hover:bg-[#7A2332]/10 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  title="Aumentar meio tom (+1)"
-                >
-                  <span className="material-symbols-outlined text-sm">add</span>
-                  +1 Semitom
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Reference Audio Shortcut */}
-                {selectedSong.audioUrl && (
-                  <a
-                    href={selectedSong.audioUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1 h-9 rounded-xl text-xs font-bold px-3 bg-[#FFF9F2] text-[#7A2332] border border-[#7A2332]/20 hover:bg-[#7A2332]/10 transition-colors"
-                    title="Ouvir áudio de referência"
-                  >
-                    <span className="material-symbols-outlined text-base text-[#C9A24A]">headphones</span>
-                    <span className="hidden sm:inline">Áudio Referência</span>
-                  </a>
-                )}
-
-                {/* Auto-Scroll Button */}
-                <button
-                  onClick={() => setIsAutoScrolling(!isAutoScrolling)}
-                  className={`flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold px-3 shadow-xs transition-all cursor-pointer ${
-                    isAutoScrolling
-                      ? 'bg-red-700 text-white animate-pulse'
-                      : 'bg-[#C9A24A] text-white hover:bg-[#b08d3e]'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-base">
-                    {isAutoScrolling ? 'pause' : 'south'}
-                  </span>
-                  <span>{isAutoScrolling ? 'Parar' : 'Auto-Scroll'}</span>
-                </button>
-              </div>
+              <p className="text-[11px] text-[#5C4A3E] border-t border-[#7A2332]/10 pt-2">
+                A transposição muda <strong>apenas os acordes</strong>. A letra e a posição de cada
+                acorde sobre a sílaba ficam exatamente como foram importadas — e o tom escolhido
+                fica guardado nesta música.
+              </p>
             </div>
           </div>
-
-          {/* Action Row */}
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => setIsStageMode(!isStageMode)}
-              className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-xl font-semibold text-xs border border-[#7A2332]/20 transition-colors cursor-pointer ${
-                isStageMode
-                  ? 'bg-[#7A2332] text-white'
-                  : 'bg-[#FFF9F2] text-[#7A2332] hover:bg-[#7A2332]/10'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                {isStageMode ? 'close_fullscreen' : 'fullscreen'}
-              </span>
-              <span>{isStageMode ? 'Sair do Modo Palco' : 'Modo de Palco'}</span>
-            </button>
-
-            <button
-              onClick={onOpenDrive}
-              className="flex-1 flex items-center justify-center gap-2 bg-[#FFF9F2] text-[#7A2332] h-10 rounded-xl font-semibold text-xs border border-[#7A2332]/20 hover:bg-[#7A2332]/10 transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px]">folder_open</span>
-              <span>Biblioteca L&A</span>
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Search Quick Results Tray when searching */}
-      {searchQuery && filteredSongs.length > 0 && (
-        <div className="px-5 pt-4 max-w-2xl mx-auto w-full">
-          <div className="bg-white border border-[#7A2332]/20 rounded-2xl p-3 shadow-xs">
-            <span className="text-xs font-bold text-[#7A2332] uppercase block mb-2 px-1">
-              Resultados da Pesquisa ({filteredSongs.length})
-            </span>
-            <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
-              {filteredSongs.map((song) => (
-                <button
-                  key={song.id}
-                  onClick={() => {
-                    onSelectSong(song);
-                  }}
-                  className={`flex items-center justify-between p-2.5 rounded-xl text-left transition-colors cursor-pointer ${
-                    song.id === selectedSong.id
-                      ? 'bg-[#7A2332] text-white'
-                      : 'bg-[#FFF9F2] text-[#2D2118] hover:bg-[#7A2332]/10'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
-                      song.id === selectedSong.id ? 'bg-[#C9A24A] text-white' : 'bg-[#7A2332]/10 text-[#7A2332]'
-                    }`}>
-                      {song.number}
-                    </span>
-                    <div>
-                      <p className="text-xs font-semibold">{song.title}</p>
-                      <p className={`text-[10px] ${song.id === selectedSong.id ? 'text-amber-100' : 'text-[#5C4A3E]'}`}>
-                        {song.part} • Tom: {song.key}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="material-symbols-outlined text-sm">
-                    {song.id === selectedSong.id ? 'check_circle' : 'chevron_right'}
-                  </span>
-                </button>
-              ))}
+      {/* ── A cifra ─────────────────────────────────────────────────────── */}
+      <div className="max-w-3xl mx-auto w-full px-3 sm:px-5 py-6">
+        {!modoPalco && (
+          <header className="mb-5 flex items-start justify-between gap-3 border-b border-[#7A2332]/15 pb-4">
+            <div className="min-w-0">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#7A2332] leading-tight">
+                {selectedSong.title}
+              </h2>
+              <p className="text-[11px] font-bold text-[#C9A24A] uppercase tracking-widest mt-1">
+                {selectedSong.part} · {selectedSong.season || 'Tempo Comum'}
+              </p>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Music Content Area */}
-      <div className={`px-5 py-8 transition-all duration-300 max-w-2xl mx-auto ${isStageMode ? 'text-xl' : 'text-base'}`}>
-        <header className="mb-8 text-center border-b border-[#7A2332]/15 pb-4">
-          <h2 className="font-serif text-3xl font-bold text-[#7A2332] mb-1">{selectedSong.title}</h2>
-          <p className="text-xs font-bold text-[#C9A24A] uppercase tracking-widest">
-            {selectedSong.part} • {selectedSong.season || 'Tempo Comum'}
-          </p>
-        </header>
+            <div className="flex items-center gap-1 shrink-0">
+              {selectedSong.youtubeUrl && (
+                <a
+                  href={selectedSong.youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Ouvir áudio de referência"
+                  className="w-10 h-10 rounded-xl bg-white border border-[#7A2332]/20 text-[#7A2332] flex items-center justify-center hover:border-[#7A2332]/50 transition"
+                >
+                  <span aria-hidden className="material-symbols-outlined text-lg">headphones</span>
+                </a>
+              )}
+              <button
+                onClick={() => alternarFavorita(selectedSong.id)}
+                aria-label={ehFavorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                className={`w-10 h-10 rounded-xl border flex items-center justify-center transition cursor-pointer ${
+                  ehFavorita
+                    ? 'bg-[#C9A24A] text-white border-[#C9A24A]'
+                    : 'bg-white text-[#5C4A3E] border-[#7A2332]/20 hover:text-[#C9A24A]'
+                }`}
+              >
+                <span aria-hidden className="material-symbols-outlined text-lg">{ehFavorita ? 'star' : 'star_border'}</span>
+              </button>
+            </div>
+          </header>
+        )}
 
-        {/* Cifra alinhada — cada acorde ancorado na coluna da sílaba.
-            Transpor troca só o acorde; a letra nunca é reescrita. */}
-        <div className="bg-white p-6 rounded-2xl border border-[#7A2332]/15 shadow-xs">
+        <div className={`bg-white rounded-2xl border border-[#7A2332]/15 p-4 sm:p-6 ${escalaTexto}`}>
           <CifraAlinhada
             texto={selectedSong.fullChordText}
             tomOriginal={selectedSong.key}
-            semitons={semitones}
+            semitons={semitons}
           />
         </div>
-      </div>
 
-      {/* Importação e transposição — motor novo, com âncoras por caractere */}
-      <div className="px-5 pb-2 max-w-2xl mx-auto w-full">
-        <CifraPainel />
-      </div>
-
-      {/* Upload / Empty State Zone */}
-      <div className="px-5 pb-8 mt-6 max-w-xl mx-auto w-full">
-        <div className="rounded-2xl bg-white border-2 border-dashed border-[#7A2332]/20 p-6 flex flex-col items-center justify-center gap-3 text-center">
-          <div className="w-12 h-12 rounded-full bg-[#FFF9F2] flex items-center justify-center text-[#7A2332] border border-[#7A2332]/15 shadow-xs">
-            <span className="material-symbols-outlined text-2xl">post_add</span>
-          </div>
-          <div>
-            <p className="font-serif font-bold text-base text-[#7A2332]">Adicionar Nova Cifra Litúrgica</p>
-            <p className="text-xs text-[#5C4A3E] max-w-xs mx-auto mt-0.5">
-              Cole o texto ou faça upload de um arquivo PDF/Word para o acervo do ministério.
-            </p>
-          </div>
-          <div className="flex gap-2.5 w-full max-w-xs mt-2">
+        {/* Tamanho da letra: perto da cifra, que é onde a dúvida aparece */}
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-[#5C4A3E]">Letra</span>
             <button
-              onClick={onOpenAddChordModal}
-              className="flex-1 bg-[#7A2332] hover:bg-[#4D1721] text-white h-11 rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              onClick={() => setTamanho((t) => Math.max(t - 1, 0))}
+              disabled={tamanho === 0}
+              aria-label="Diminuir o tamanho da letra"
+              className="w-8 h-8 rounded-lg border border-[#7A2332]/20 bg-white text-[#7A2332] flex items-center justify-center disabled:opacity-30 hover:border-[#7A2332]/50 transition cursor-pointer"
             >
-              Upload / Colar Cifra
+              <span aria-hidden className="material-symbols-outlined text-sm">text_decrease</span>
+            </button>
+            <button
+              onClick={() => setTamanho((t) => Math.min(t + 1, 4))}
+              disabled={tamanho === 4}
+              aria-label="Aumentar o tamanho da letra"
+              className="w-8 h-8 rounded-lg border border-[#7A2332]/20 bg-white text-[#7A2332] flex items-center justify-center disabled:opacity-30 hover:border-[#7A2332]/50 transition cursor-pointer"
+            >
+              <span aria-hidden className="material-symbols-outlined text-sm">text_increase</span>
             </button>
           </div>
+
+          {!modoPalco && (
+            <button
+              onClick={() => onSubstituirCifra(selectedSong)}
+              className="text-[11px] font-bold text-[#5C4A3E] hover:text-[#7A2332] underline decoration-dotted cursor-pointer"
+            >
+              Corrigir esta cifra
+            </button>
+          )}
         </div>
       </div>
+
+      {/* ── Rodapé: acervo. Fora do caminho de quem só quer tocar ───────── */}
+      {!modoPalco && (
+        <div className="max-w-3xl mx-auto w-full px-3 sm:px-5 pb-8 grid sm:grid-cols-2 gap-2.5">
+          <button
+            onClick={onImportarCifra}
+            className="flex items-center justify-center gap-2 h-12 rounded-2xl bg-[#7A2332] text-[#FFF9F2] text-sm font-bold hover:brightness-110 transition cursor-pointer"
+          >
+            <span aria-hidden className="material-symbols-outlined text-lg">upload_file</span>
+            Importar cifra do Word
+          </button>
+          <button
+            onClick={onOpenDrive}
+            className="flex items-center justify-center gap-2 h-12 rounded-2xl bg-white text-[#7A2332] border border-[#7A2332]/20 text-sm font-bold hover:border-[#7A2332]/50 transition cursor-pointer"
+          >
+            <span aria-hidden className="material-symbols-outlined text-lg">folder_open</span>
+            Biblioteca L&amp;A
+          </button>
+        </div>
+      )}
+
+      {(mostrarControle || rolando) && (
+        <ControleVelocidade
+          rolando={rolando}
+          velocidade={velocidade}
+          onVelocidade={setVelocidade}
+          onAlternar={alternar}
+          onFechar={() => { parar(); setMostrarControle(false); }}
+          acimaDaNavegacao={!modoPalco}
+        />
+      )}
     </div>
   );
-};
+}
