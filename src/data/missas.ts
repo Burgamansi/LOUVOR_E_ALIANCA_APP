@@ -38,6 +38,170 @@ const A = (tipo: TipoArquivoMissa, driveFileId: string, nomeExibicao: string, ta
 const LOCAL = 'Paróquia São Judas Tadeu — Americana/SP';
 
 export const MISSAS: Missa[] = [
+  // ── Janeiro a março de 2026 ────────────────────────────────────────────
+  // Mapeadas a partir de MISSAS_2026 no Drive. As datas vêm do calendário
+  // litúrgico (Páscoa em 05/04/2026) e conferem com a data de modificação de
+  // cada projeção — o .pptx é sempre salvo na véspera da celebração.
+  {
+    slug: '2026-01-01-santa-mae-de-deus', data: '2026-01-01', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Solenidade de Santa Maria, Mãe de Deus',
+    tituloExibicao: 'Solenidade da Santa Mãe de Deus',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'A projeção está duplicada no Drive (duas cópias idênticas); registrei uma.',
+    arquivos: [
+      A('pdf',  '1K9rpv9sZE7wjbA2VOtvdEXlPeyb1hnHM', 'Roteiro',            160220),
+      A('docx', '1mrmgUj25kPMUnvpMKB0cukUxAw3Gmtpt', 'Texto de trabalho',   89135),
+      A('pptx', '1NKjc-C-di4cR7nQpgZQb1fHYte57CxAG', 'Projeção',         20860721),
+    ],
+  },
+  {
+    slug: '2026-01-04-epifania-do-senhor', data: '2026-01-04', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Epifania do Senhor',
+    tituloExibicao: 'Solenidade da Epifania do Senhor',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Quatro projeções na pasta — dois pares duplicados. Registrei a principal.',
+    arquivos: [
+      A('pdf',  '1ehXruQ8iuQqfTDfkaKdtYg4KSDLWYfld', 'Roteiro',            224586),
+      A('docx', '1YA0cNqB2c7qsfSZnJ1kmtBWsxB7UbqPN', 'Texto de trabalho',   86025),
+      A('pptx', '1qQ1v2oF3oENI15uFYFLqI3NKUj4jpapN', 'Projeção',         27171003),
+    ],
+  },
+  {
+    slug: '2026-01-11-batismo-do-senhor', data: '2026-01-11', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: 'Festa do Batismo do Senhor',
+    tituloExibicao: 'Festa do Batismo do Senhor',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'A pasta guarda também duas projeções da Epifania e uma apostila de cifras — ignoradas.',
+    arquivos: [
+      A('pdf',  '1tJqZkhkXlc_yKyNVdRdOv7kfcviPXJra', 'Roteiro',            290578),
+      A('docx', '1fzFGWotIn52Rso6Ipur5o1EquVrrzNJs', 'Texto de trabalho',  165943),
+      A('pptx', '1c1xLSKMvfZ1DrdLZ5cA1HMGKsEDsW4xn', 'Projeção',         77274665),
+    ],
+  },
+  {
+    slug: '2026-01-18-2-domingo-tempo-comum', data: '2026-01-18', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '2º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 2º Domingo do Tempo Comum',
+    cor: 'verde', status: 'rascunho', local: LOCAL,
+    observacao: 'SEM MATERIAL: a pasta existe no Drive, mas sem roteiro, texto ou projeção.',
+    arquivos: [],
+  },
+  {
+    slug: '2026-01-25-3-domingo-tempo-comum', data: '2026-01-25', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '3º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 3º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Projeção duplicada no Drive; registrei uma.',
+    arquivos: [
+      A('pdf',  '1pggjJmNHsNJMD4tIENaCsXxS9qqwXvO7', 'Roteiro',            321136),
+      A('docx', '1Mh2FmNS5L6rxDkMVRW95jC_iC5-1XHFK', 'Texto de trabalho',  162195),
+      A('pptx', '1mEZ6taRaM7uCjOLX2_qw0oGOsf85qHw8', 'Projeção',         69465594),
+    ],
+  },
+  {
+    slug: '2026-02-01-4-domingo-tempo-comum', data: '2026-02-01', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '4º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 4º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Projeção duplicada no Drive; registrei uma.',
+    arquivos: [
+      A('pdf',  '12n2sfm_4Gu5JMUUw5QHqyBiP5DhiLcSA', 'Roteiro',            278469),
+      A('docx', '11c8ysGzxyWLI5Al_rWneVoikG7Doalwz', 'Texto de trabalho',  126377),
+      A('pptx', '1GBd0zWXqK3KySCWa3DqfEfRHIPAKwgiU', 'Projeção',         50314757),
+    ],
+  },
+  {
+    slug: '2026-02-08-5-domingo-tempo-comum', data: '2026-02-08', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '5º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 5º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'Projeção duplicada no Drive; registrei uma.',
+    arquivos: [
+      A('pdf',  '1CdXbyC_nf2oF89a0QAcQm4uYIqczCjbW', 'Roteiro',            295686),
+      A('docx', '1lBxVCsC3sjnW2jpiwkOY1kbWxjRdISHf', 'Texto de trabalho',  165889),
+      A('pptx', '1Xbb9-fqb8GxX1jXmaAUt4ZqkpjdMeZot', 'Projeção',         47903830),
+    ],
+  },
+  {
+    slug: '2026-02-15-6-domingo-tempo-comum', data: '2026-02-15', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '6º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 6º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'A pasta guarda também "00 1 Dom Quaresma - CF 2026.pptx", de outra celebração — ignorada.',
+    arquivos: [
+      A('pdf',  '1yMQd3TgcXuc2XTqBkJ-n6YQeA95C3cqg', 'Roteiro',            226820),
+      A('docx', '1e0PIElacvuFSJO6_qIItn8STvupP2s5z', 'Texto de trabalho',  124994),
+      A('pptx', '1eh6iSHz77HORotVSLXQvJqgJ825AAt4P', 'Projeção',         57143311),
+    ],
+  },
+  {
+    slug: '2026-02-22-1-domingo-quaresma', data: '2026-02-22', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '1º Domingo da Quaresma',
+    tituloExibicao: 'Missa das 9h — 1º Domingo da Quaresma',
+    cor: 'roxo', status: 'publicada', local: LOCAL,
+    observacao: 'Texto e projeção duplicados no Drive; registrei um de cada.',
+    arquivos: [
+      A('pdf',  '1h2gtNsWMLTXQ_rRV2KCQT5wzRE1_Upwx', 'Roteiro',            457308),
+      A('docx', '1aPVs-5qEiR2D2Gz6cPZ502hwQ2svfd01', 'Texto de trabalho', 1335191),
+      A('pptx', '1PVq3Wy_2UA0Z1XB7cgo7BSNKwtc-oP5z', 'Projeção',         59421806),
+    ],
+  },
+  {
+    slug: '2026-03-01-2-domingo-quaresma', data: '2026-03-01', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '2º Domingo da Quaresma',
+    tituloExibicao: 'Missa das 9h — 2º Domingo da Quaresma',
+    cor: 'roxo', status: 'publicada', local: LOCAL,
+    observacao: 'Guardada na pasta de fevereiro do Drive. Texto e projeção duplicados.',
+    arquivos: [
+      A('pdf',  '1SuFGg-RN6G7KccydCB_Y_sf_StyjLzdI', 'Roteiro',            457308),
+      A('docx', '1zSpdcYtIfTeyMT-5SWRGS71ou2ZSKqH_', 'Texto de trabalho', 1335191),
+      A('pptx', '1ObWs1xu5b09zUtneOYMKe5oOFX_dR5Nc', 'Projeção',         70227581),
+    ],
+  },
+  {
+    slug: '2026-03-08-3-domingo-quaresma', data: '2026-03-08', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '3º Domingo da Quaresma',
+    tituloExibicao: 'Missa das 9h — 3º Domingo da Quaresma',
+    cor: 'roxo', status: 'rascunho', local: LOCAL,
+    observacao: 'SEM MATERIAL PRÓPRIO: a pasta "3º Domingo da Quaresma" no Drive contém os arquivos do 4º Domingo, iguais aos da pasta do 4º. Vale conferir se o material deste domingo se perdeu.',
+    arquivos: [],
+  },
+  {
+    slug: '2026-03-15-4-domingo-quaresma', data: '2026-03-15', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '4º Domingo da Quaresma',
+    tituloExibicao: 'Missa das 9h — 4º Domingo da Quaresma (Laetare)',
+    cor: 'rosa', status: 'publicada', local: LOCAL,
+    observacao: 'Texto e projeção duplicados no Drive; registrei um de cada.',
+    arquivos: [
+      A('pdf',  '1doo077eQcv8nRmNBrQxj3BhOmVjKo5VX', 'Roteiro',            457308),
+      A('docx', '1F2CnUUGjR2btUK1p2uRwdm4S-NCTNR8e', 'Texto de trabalho', 1335191),
+      A('pptx', '1ad2V_UwceXFgW_FeVgN6fdnjZopDn70R', 'Projeção',         64041188),
+    ],
+  },
+  {
+    slug: '2026-03-22-5-domingo-quaresma', data: '2026-03-22', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '5º Domingo da Quaresma',
+    tituloExibicao: 'Missa das 9h — 5º Domingo da Quaresma',
+    cor: 'roxo', status: 'publicada', local: LOCAL,
+    observacao: 'O texto e a projeção são o mesmo arquivo do 4º Domingo (mesmo tamanho e data) — só o roteiro é próprio.',
+    arquivos: [
+      A('pdf',  '15DIO-0_XKVHrMwp6-r-qztqpEaxrHJD2', 'Roteiro',            457308),
+      A('docx', '1txWLWNFdm21vBuy3x1BQI4ofJO1yMm-C', 'Texto de trabalho', 1335191),
+      A('pptx', '11lhBkiyPjYN0MK36eG0Y0rh8ZbcGwvMX', 'Projeção',         64041188),
+    ],
+  },
+  {
+    slug: '2026-03-29-domingo-de-ramos', data: '2026-03-29', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Domingo de Ramos da Paixão do Senhor',
+    tituloExibicao: 'Domingo de Ramos da Paixão do Senhor',
+    cor: 'vermelho', status: 'publicada', local: LOCAL,
+    observacao: 'Há também "00 Dom Ramos 2026.pptx", uma versão reduzida — ignorada.',
+    arquivos: [
+      A('pdf',  '10BxbvpdVQy6hmsS1Rjqih_EUj0ZcJ3TP', 'Roteiro',            213089),
+      A('docx', '1Xs9d6gQ2EievQhG2iipZXSHDEB8LQQF_', 'Texto de trabalho', 1081715),
+      A('pptx', '1g7jb1S5vQni8DS7ONsAyjiy40e9g9eb8', 'Projeção',         61626170),
+    ],
+  },
   {
     slug: '2026-06-07-10-domingo-tempo-comum', data: '2026-06-07', hora: '09:00', tipo: 'domingo',
     tituloLiturgico: '10º Domingo do Tempo Comum',
