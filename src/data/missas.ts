@@ -38,6 +38,74 @@ const A = (tipo: TipoArquivoMissa, driveFileId: string, nomeExibicao: string, ta
 const LOCAL = 'Paróquia São Judas Tadeu — Americana/SP';
 
 export const MISSAS: Missa[] = [
+  // ── Junho de 2025 ──────────────────────────────────────────────────────
+  // As projeções deste mês também foram salvas em bloco em 04/10/2025; as
+  // datas vêm do calendário litúrgico e, quando existe, do nome da pasta.
+  {
+    slug: '2025-06-01-ascensao-do-senhor', data: '2025-06-01', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Ascensão do Senhor',
+    tituloExibicao: 'Solenidade da Ascensão do Senhor',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Data confirmada pelo nome da pasta. O único texto na pasta é o de Pentecostes, que ficou aqui por engano; e há um "Templates.pptx" avulso.',
+    arquivos: [
+      A('pdf',  '1p_Rk6iaTj06kSaFQWacCdRvED-bsOWK-', 'Roteiro',            193150),
+      A('pptx', '1v0nwiSoIIWaqTJb3_8yYkdwIIe_iH97A', 'Projeção',         67586071),
+    ],
+  },
+  {
+    slug: '2025-06-08-pentecostes', data: '2025-06-08', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Pentecostes',
+    tituloExibicao: 'Solenidade de Pentecostes',
+    cor: 'vermelho', status: 'publicada', local: LOCAL,
+    observacao: 'Data confirmada pelo nome da pasta. Há um segundo roteiro em PDF de 5,7 MB com o mesmo conteúdo — registrei o menor.',
+    arquivos: [
+      A('pdf',  '1y2DJLHFUXzlAY6T81WqgrEM9J43qSHUb', 'Roteiro',            300158),
+      A('docx', '1UBaCwFr0WwlYJIy0Togf4W_qLVp3GtL5', 'Texto de trabalho',  180525),
+      A('pptx', '1I9XB4qVN2UuonXfT-EK0xZ07_4Zv8SbG', 'Projeção',         70689578),
+    ],
+  },
+  {
+    slug: '2025-06-15-santissima-trindade', data: '2025-06-15', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Santíssima Trindade',
+    tituloExibicao: 'Solenidade da Santíssima Trindade',
+    cor: 'branco', status: 'rascunho', local: LOCAL,
+    observacao: 'SEM MATERIAL: a pasta existe no Drive, mas sem roteiro, texto ou projeção.',
+    arquivos: [],
+  },
+  {
+    slug: '2025-06-19-corpus-christi', data: '2025-06-19', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'Santíssimo Corpo e Sangue de Cristo',
+    tituloExibicao: 'Solenidade de Corpus Christi',
+    cor: 'branco', status: 'publicada', local: LOCAL,
+    observacao: 'Sem projeção. O roteiro cobre só as partes fixas; a pasta traz ainda as cifras e o salmo em arquivos separados.',
+    arquivos: [
+      A('pdf',  '1RPDt-vE0NDr_ACQPF9txNJOIK9yy6LzT', 'Roteiro — partes fixas', 339916),
+      A('docx', '1UQnUuDn_lqHK7IvRQqBcrV57ndPq72_5', 'Cifras',                  38923),
+    ],
+  },
+  {
+    slug: '2025-06-22-12-domingo-tempo-comum', data: '2025-06-22', hora: '09:00', tipo: 'domingo',
+    tituloLiturgico: '12º Domingo do Tempo Comum',
+    tituloExibicao: 'Missa das 9h — 12º Domingo do Tempo Comum',
+    cor: 'verde', status: 'publicada', local: LOCAL,
+    observacao: 'A pasta guarda também a projeção do 15º Domingo — de outra celebração, e quase do mesmo tamanho. Registrei a do 12º.',
+    arquivos: [
+      A('pdf',  '14FJAGyzmvgaFDrvjYQq65TA0HpwFAXqU', 'Roteiro e cifras',   491341),
+      A('docx', '1_bWeGFrufYAKPEOtShUOxVuUg-qfZ0nG', 'Texto de trabalho',  495258),
+      A('pptx', '1rIocEJONgFgj7XHdFQSjZDXuT4NXQy-d', 'Projeção',         59384302),
+    ],
+  },
+  {
+    slug: '2025-06-29-sao-pedro-e-sao-paulo', data: '2025-06-29', hora: '09:00', tipo: 'solenidade',
+    tituloLiturgico: 'São Pedro e São Paulo, Apóstolos',
+    tituloExibicao: 'Solenidade de São Pedro e São Paulo',
+    cor: 'vermelho', status: 'publicada', local: LOCAL,
+    arquivos: [
+      A('pdf',  '1Sfz_MAnO5NpUroFFvx8rGqBFrm947WdB', 'Roteiro',            305951),
+      A('docx', '19Oo3hW04Kpp3ctTcqZP9GRR0OfhEeo7y', 'Texto de trabalho',  376347),
+      A('pptx', '1mOvDYauyb_AFgvR3tAuC7Hth-45lMVuP', 'Projeção',         52629116),
+    ],
+  },
   // ── Agosto de 2025 ─────────────────────────────────────────────────────
   // Não há 20º Domingo: a Solenidade da Assunção caiu no domingo 17/08 e o
   // substituiu. Nenhuma celebração deste mês tem projeção no Drive.
