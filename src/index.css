@@ -99,6 +99,128 @@
   }
 }
 
+/* ── Cifra em duas colunas ─────────────────────────────────────────────────
+ *
+ * Numa tela de tablet deitado a cifra usava 654 px de 1024 e sobravam 370 em
+ * branco. Em duas colunas o canto inteiro cabe sem rolar — que é o ponto de
+ * ler no atril.
+ *
+ * `break-inside: avoid` em cada linha não é detalhe: o acorde é um span
+ * posicionado por cima da letra, e uma quebra de coluna no meio da linha
+ * deixaria o acorde numa coluna e a sílaba na outra. */
+.cifra-colunas {
+  columns: 2;
+  column-gap: 2.5rem;
+  column-rule: 1px solid rgb(122 35 50 / 0.12);
+}
+
+.cifra-colunas > div > div {
+  break-inside: avoid;
+}
+
+/* ── Folha A4 ──────────────────────────────────────────────────────────────
+ *
+ * "Imprimir" aqui quer dizer também "Salvar em PDF", que é o que o celular e o
+ * computador oferecem na mesma caixa de diálogo. É o caminho que funciona em
+ * qualquer aparelho para levar a cifra ao atril.
+ *
+ * Some tudo o que é do aplicativo e fica só a música: o papel não tem barra de
+ * navegação, não tem botão de tom, e tinta preta se lê melhor do que vinho. */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* A moldura do aplicativo inteira.
+   *
+   * `header` sozinho não serve: a própria folha tem um <header> com o nome do
+   * canto e o tom, e um `display:none !important` genérico ganhava do
+   * `print:block` dele — a folha saía sem título. Aqui só o cabeçalho fixo do
+   * aplicativo é escondido, e ele é fixo por definição. */
+  header.fixed,
+  aside,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  main,
+  .pb-nav {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* O fundo pergaminho não vai para o papel. Normalmente o navegador já
+   * descarta fundos ao imprimir, mas basta a pessoa marcar "imprimir cores de
+   * fundo" na caixa de diálogo — ou salvar em PDF com essa opção — para a
+   * folha sair com faixas creme atrás da letra. */
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* A rolagem automática e o controle de velocidade não existem no papel. */
+  .fixed,
+  .sticky {
+    display: none !important;
+  }
+
+  .cifra-folha {
+    overflow: visible !important;
+  }
+
+  .cifra-folha .overflow-x-auto,
+  .cifra-folha .cifra-colunas {
+    overflow: visible !important;
+  }
+
+  /* No papel a linha não pode rolar para o lado: o que passou da margem foi
+   * cortado e ninguém descobre até estar tocando. Então a fonte é dimensionada
+   * para a linha mais longa caber — --maior-linha vem do componente, contado em
+   * caracteres, e 0.6em é a largura do caractere numa fonte monoespaçada.
+   *
+   * A4 retrato com 12mm de margem dá 186mm úteis. O teto de 13pt é para uma
+   * cifra curta não sair com letra de cartaz. */
+  .cifra-folha .min-w-max {
+    min-width: 0 !important;
+  }
+
+  .cifra-folha {
+    font-size: min(13pt, calc(186mm / (var(--maior-linha, 60) * 0.6))) !important;
+  }
+
+  .cifra-folha .font-mono {
+    font-size: inherit !important;
+  }
+
+  /* Uma coluna só. Duas caberiam mais música por folha, mas cada uma teria
+   * metade da largura e portanto letra quase pela metade — o contrário do que
+   * a folha A4 existe para resolver. */
+  .cifra-folha .cifra-colunas {
+    columns: 1 !important;
+    column-rule: none !important;
+  }
+
+  .cifra-folha,
+  .cifra-folha * {
+    color: #000 !important;
+  }
+
+  /* O acorde continua em destaque, mas por peso, não por cor. */
+  .cifra-folha .font-bold {
+    font-weight: 700 !important;
+  }
+}
+
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
 }
