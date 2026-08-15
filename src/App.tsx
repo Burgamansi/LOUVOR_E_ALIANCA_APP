@@ -153,6 +153,22 @@ export default function App() {
     setCifraEmEdicao(null);
   };
 
+  /**
+   * Um arquivo de missa traz a celebração inteira. Cada canto entra como uma
+   * música própria — é isso que dá a cada um o seu tom, já que o tom é guardado
+   * por id de música. Abre no primeiro, que é a Entrada.
+   */
+  const handleSalvarVariasCifras = (novas: LiturgicalSong[]) => {
+    if (novas.length === 0) return;
+    setSongs((prev) => {
+      const ids = new Set(novas.map((n) => n.id));
+      return [...prev.filter((s) => !ids.has(s.id)), ...novas];
+    });
+    setSelectedSong(novas[0]);
+    setCurrentTab('cifras');
+    setCifraEmEdicao(null);
+  };
+
   // Add new media item
   const handleAddMedia = (media: GalleryMediaItem) => {
     setGalleryMedia(prev => [media, ...prev]);
@@ -328,6 +344,7 @@ export default function App() {
         aberto={isImportarCifraOpen}
         onFechar={() => { setIsImportarCifraOpen(false); setCifraEmEdicao(null); }}
         onSalvar={handleSalvarCifra}
+        onSalvarVarias={handleSalvarVariasCifras}
         musicaExistente={cifraEmEdicao}
         proximoNumero={songs.length + 1}
       />

@@ -3,20 +3,33 @@ import type { LiturgicalSong } from '../types';
 import { importarArquivo, importarTexto } from '../lib/cifras/importar';
 import type { DiagnosticoImportacao } from '../lib/cifras/importar';
 import { TONS } from '../lib/cifras/acordes';
+import { MOMENTOS_LITURGICOS } from '../lib/cifras/cantos';
 import { CifraAlinhada } from './CifraAlinhada';
 
-const MOMENTOS = [
-  'ENTRADA', 'ATO PENITENCIAL', 'GLÓRIA', 'SALMO', 'ACLAMAÇÃO', 'OFERTÓRIO',
-  'SANTO', 'CORDEIRO', 'COMUNHÃO', 'FINAL',
-];
+// A mesma lista que o separador de cantos usa para achar as fronteiras. Se as
+// duas divergirem, um canto detectado como PÓS-COMUNHÃO cai num <select> que
+// não tem essa opção e o campo aparece vazio.
+const MOMENTOS = MOMENTOS_LITURGICOS;
 
 interface ImportarCifraModalProps {
   aberto: boolean;
   onFechar: () => void;
   onSalvar: (musica: LiturgicalSong) => void;
+  /** Salva de uma vez os vários cantos encontrados num arquivo de missa. */
+  onSalvarVarias?: (musicas: LiturgicalSong[]) => void;
   /** Quando vem preenchido, o modal substitui a cifra desta música. */
   musicaExistente?: LiturgicalSong | null;
   proximoNumero: number;
+}
+
+/** Um canto detectado, já editável pela pessoa antes de salvar. */
+interface CantoEditavel {
+  incluir: boolean;
+  titulo: string;
+  momento: string;
+  tom: string;
+  texto: string;
+  confianca: 'alta' | 'media';
 }
 
 /**
@@ -32,6 +45,7 @@ export function ImportarCifraModal({
   aberto,
   onFechar,
   onSalvar,
+  onSalvarVarias,
   musicaExistente = null,
   proximoNumero,
 }: ImportarCifraModalProps) {
@@ -46,6 +60,11 @@ export function ImportarCifraModal({
   const [tom, setTom] = useState('G');
   const [colado, setColado] = useState('');
 
+  // Os cantos encontrados no arquivo, já editáveis. Vazio ou com um só, o
+  // fluxo é o de sempre — uma cifra, um título, um tom.
+  const [cantos, setCantos] = useState<CantoEditavel[]>([]);
+  const [cantoAberto, setCantoAberto] = useState<number | null>(null);
+
   const inputArquivo = useRef<HTMLInputElement>(null);
 
   // Reabrir o modal precisa começar limpo: um diagnóstico antigo na tela faria
@@ -59,6 +78,8 @@ export function ImportarCifraModal({
     setTitulo(musicaExistente?.title ?? '');
     setMomento(musicaExistente?.part ?? 'ENTRADA');
     setTom(musicaExistente?.key ?? 'G');
+    setCantos([]);
+    setCantoAberto(null);
   }, [aberto, musicaExistente]);
 
   useEffect(() => {
@@ -78,7 +99,27 @@ export function ImportarCifraModal({
         nomeArquivo.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()
       );
     }
+
+    // Substituir a cifra de uma música existente é sempre uma coisa só, mesmo
+    // que o arquivo colado tenha vários cantos: quem clicou em "corrigir esta
+    // cifra" quer corrigir aquela, não criar oito.
+    setCantos(
+      musicaExistente
+        ? []
+        : d.cantos.map((c) => ({
+            incluir: true,
+            titulo: c.titulo,
+            momento: c.momento ?? 'ENTRADA',
+            tom: c.tomSugerido,
+            texto: c.texto,
+            confianca: c.confianca,
+          }))
+    );
+    setCantoAberto(null);
   };
+
+  const mudarCanto = (i: number, campos: Partial<CantoEditavel>) =>
+    setCantos((atual) => atual.map((c, j) => (j === i ? { ...c, ...campos } : c)));
 
   const receberArquivo = async (arquivo: File) => {
     setErro(null);
@@ -110,7 +151,35 @@ export function ImportarCifraModal({
     onFechar();
   };
 
-  const podeSalvar = Boolean(diagnostico && titulo.trim());
+  /** Vários cantos no mesmo arquivo: cada um vira uma música com o seu tom. */
+  const salvarVarios = () => {
+    const escolhidos = cantos.filter((c) => c.incluir && c.titulo.trim());
+    if (escolhidos.length === 0 || !onSalvarVarias) return;
+
+    const base = Date.now();
+    onSalvarVarias(
+      escolhidos.map((c, i) => ({
+        id: `song-${base}-${i}`,
+        number: proximoNumero + i,
+        part: c.momento,
+        title: c.titulo.trim(),
+        key: c.tom,
+        lyricsPreview:
+          c.texto.split('\n').find((l) => l.trim() && !/^[\[(]/.test(l.trim()))?.trim().slice(0, 60) ?? '',
+        fullChordText: c.texto,
+      }))
+    );
+    onFechar();
+  };
+
+  // O modo de vários cantos só existe quando o arquivo realmente trouxe mais
+  // de um e há para onde salvá-los.
+  const varios = cantos.length > 1 && Boolean(onSalvarVarias);
+  const marcados = cantos.filter((c) => c.incluir && c.titulo.trim()).length;
+
+  const podeSalvar = varios
+    ? marcados > 0
+    : Boolean(diagnostico && titulo.trim());
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4">
@@ -249,75 +318,180 @@ export function ImportarCifraModal({
                 </p>
               ))}
 
-              {/* Identificação */}
-              <div className="grid sm:grid-cols-3 gap-3">
-                <label className="flex flex-col gap-1 sm:col-span-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">Título</span>
-                  <input
-                    value={titulo}
-                    onChange={(e) => setTitulo(e.target.value)}
-                    placeholder="Como é bom a gente se encontrar"
-                    className="px-3 py-2.5 rounded-xl border border-[#7A2332]/20 bg-white text-sm text-[#2D2118] focus:outline-none focus:border-[#7A2332]"
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">
-                    Tom {diagnostico.tomSugerido && <em className="font-normal normal-case">· achei {diagnostico.tomSugerido}</em>}
-                  </span>
-                  <select
-                    value={tom}
-                    onChange={(e) => setTom(e.target.value)}
-                    className="px-3 py-2.5 rounded-xl border border-[#7A2332]/20 bg-white text-sm font-bold text-[#7A2332] focus:outline-none focus:border-[#7A2332] cursor-pointer"
-                  >
-                    {TONS.map((t) => <option key={t} value={t}>{t}</option>)}
-                    {TONS.map((t) => <option key={`${t}m`} value={`${t}m`}>{t}m</option>)}
-                  </select>
-                </label>
-              </div>
+              {varios ? (
+                /* ── Vários cantos no mesmo arquivo ─────────────────────────
+                   O arquivo é a missa inteira. Cada canto vira uma música com
+                   o seu próprio tom — que é o que permite baixar o Ofertório
+                   sem mexer no Santo.
 
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">Momento da celebração</span>
-                <select
-                  value={momento}
-                  onChange={(e) => setMomento(e.target.value)}
-                  className="px-3 py-2.5 rounded-xl border border-[#7A2332]/20 bg-white text-sm text-[#2D2118] focus:outline-none focus:border-[#7A2332] cursor-pointer"
-                >
-                  {MOMENTOS.map((m) => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </label>
+                   Os cortes ficam à vista e editáveis de propósito. Nenhuma
+                   heurística acerta sempre, e dividir errado o repertório em
+                   silêncio é pior do que mostrar e deixar corrigir. */
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-start gap-2 bg-[#C9A24A]/15 border border-[#C9A24A]/40 rounded-xl px-3 py-2.5">
+                    <span aria-hidden className="material-symbols-outlined text-[#7A2332] text-base shrink-0">
+                      library_music
+                    </span>
+                    <p className="text-xs text-[#7A2332] leading-relaxed">
+                      Encontrei <strong>{cantos.length} cantos</strong> neste arquivo. Cada um entra como
+                      uma música, com o seu próprio tom — assim você muda o tom de um sem mexer nos
+                      outros. Confira os nomes e desmarque o que não quiser.
+                    </p>
+                  </div>
 
-              {/* Prévia — exatamente como vai aparecer no palco */}
-              <div className="bg-white rounded-2xl border border-[#7A2332]/15 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#7A2332]/10 bg-[#FFF9F2]">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">
-                    Prévia no tom {tom}
-                  </p>
-                  <button
-                    onClick={() => setEditandoTexto(!editandoTexto)}
-                    className="text-[11px] font-bold text-[#7A2332] underline decoration-dotted cursor-pointer"
-                  >
-                    {editandoTexto ? 'Ver prévia' : 'Ajustar alinhamento'}
-                  </button>
+                  {cantos.map((c, i) => {
+                    const aberto = cantoAberto === i;
+                    return (
+                      <div
+                        key={i}
+                        className={`bg-white rounded-2xl border overflow-hidden transition ${
+                          c.incluir ? 'border-[#7A2332]/20' : 'border-dashed border-[#7A2332]/15 opacity-55'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 p-3">
+                          <input
+                            type="checkbox"
+                            checked={c.incluir}
+                            onChange={(e) => mudarCanto(i, { incluir: e.target.checked })}
+                            aria-label={`Importar ${c.titulo || `canto ${i + 1}`}`}
+                            className="w-4 h-4 shrink-0 accent-[#7A2332] cursor-pointer"
+                          />
+
+                          <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-[#C9A24A] w-[92px] truncate">
+                            {c.momento}
+                          </span>
+
+                          <input
+                            value={c.titulo}
+                            onChange={(e) => mudarCanto(i, { titulo: e.target.value })}
+                            placeholder="Nome do canto"
+                            className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-[#7A2332]/15 bg-[#FFF9F2] text-sm text-[#2D2118] focus:outline-none focus:border-[#7A2332]"
+                          />
+
+                          <select
+                            value={c.tom}
+                            onChange={(e) => mudarCanto(i, { tom: e.target.value })}
+                            aria-label={`Tom de ${c.titulo || `canto ${i + 1}`}`}
+                            className="shrink-0 px-2 py-1.5 rounded-lg border border-[#7A2332]/20 bg-white text-sm font-bold text-[#7A2332] focus:outline-none cursor-pointer"
+                          >
+                            {TONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                            {TONS.map((t) => <option key={`${t}m`} value={`${t}m`}>{t}m</option>)}
+                          </select>
+
+                          <button
+                            onClick={() => setCantoAberto(aberto ? null : i)}
+                            aria-expanded={aberto}
+                            aria-label={`Ver a cifra de ${c.titulo || `canto ${i + 1}`}`}
+                            className="shrink-0 w-8 h-8 rounded-lg border border-[#7A2332]/20 text-[#7A2332] flex items-center justify-center hover:border-[#7A2332]/50 transition cursor-pointer"
+                          >
+                            <span aria-hidden className={`material-symbols-outlined text-lg transition-transform ${aberto ? 'rotate-180' : ''}`}>
+                              expand_more
+                            </span>
+                          </button>
+                        </div>
+
+                        {aberto && (
+                          <div className="border-t border-[#7A2332]/10 bg-[#FFF9F2]/60 px-3 py-3 flex flex-col gap-2.5">
+                            <label className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">
+                                Momento
+                              </span>
+                              <select
+                                value={c.momento}
+                                onChange={(e) => mudarCanto(i, { momento: e.target.value })}
+                                className="flex-1 px-2.5 py-1.5 rounded-lg border border-[#7A2332]/20 bg-white text-sm text-[#2D2118] focus:outline-none cursor-pointer"
+                              >
+                                {MOMENTOS.map((m) => <option key={m} value={m}>{m}</option>)}
+                              </select>
+                            </label>
+
+                            <div className="max-h-56 overflow-auto rounded-xl bg-white border border-[#7A2332]/10 p-3">
+                              <CifraAlinhada
+                                texto={c.texto}
+                                tomOriginal={c.tom}
+                                semitons={0}
+                                className="text-xs"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <>
+                {/* Identificação */}
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <label className="flex flex-col gap-1 sm:col-span-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">Título</span>
+                    <input
+                      value={titulo}
+                      onChange={(e) => setTitulo(e.target.value)}
+                      placeholder="Como é bom a gente se encontrar"
+                      className="px-3 py-2.5 rounded-xl border border-[#7A2332]/20 bg-white text-sm text-[#2D2118] focus:outline-none focus:border-[#7A2332]"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">
+                      Tom {diagnostico.tomSugerido && <em className="font-normal normal-case">· achei {diagnostico.tomSugerido}</em>}
+                    </span>
+                    <select
+                      value={tom}
+                      onChange={(e) => setTom(e.target.value)}
+                      className="px-3 py-2.5 rounded-xl border border-[#7A2332]/20 bg-white text-sm font-bold text-[#7A2332] focus:outline-none focus:border-[#7A2332] cursor-pointer"
+                    >
+                      {TONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                      {TONS.map((t) => <option key={`${t}m`} value={`${t}m`}>{t}m</option>)}
+                    </select>
+                  </label>
                 </div>
 
-                {editandoTexto ? (
-                  <textarea
-                    rows={14}
-                    value={diagnostico.texto}
-                    onChange={(e) => setDiagnostico(importarTexto(e.target.value))}
-                    className="w-full px-4 py-3 font-mono text-xs text-[#2D2118] focus:outline-none resize-y whitespace-pre"
-                  />
-                ) : (
-                  <div className="p-4 max-h-72 overflow-auto">
-                    <CifraAlinhada
-                      texto={diagnostico.texto}
-                      tomOriginal={tom}
-                      semitons={0}
-                      className="text-xs"
-                    />
+                <label className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">Momento da celebração</span>
+                  <select
+                    value={momento}
+                    onChange={(e) => setMomento(e.target.value)}
+                    className="px-3 py-2.5 rounded-xl border border-[#7A2332]/20 bg-white text-sm text-[#2D2118] focus:outline-none focus:border-[#7A2332] cursor-pointer"
+                  >
+                    {MOMENTOS.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </label>
+
+                {/* Prévia — exatamente como vai aparecer no palco */}
+                <div className="bg-white rounded-2xl border border-[#7A2332]/15 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#7A2332]/10 bg-[#FFF9F2]">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">
+                      Prévia no tom {tom}
+                    </p>
+                    <button
+                      onClick={() => setEditandoTexto(!editandoTexto)}
+                      className="text-[11px] font-bold text-[#7A2332] underline decoration-dotted cursor-pointer"
+                    >
+                      {editandoTexto ? 'Ver prévia' : 'Ajustar alinhamento'}
+                    </button>
                   </div>
-                )}
-              </div>
+
+                  {editandoTexto ? (
+                    <textarea
+                      rows={14}
+                      value={diagnostico.texto}
+                      onChange={(e) => setDiagnostico(importarTexto(e.target.value))}
+                      className="w-full px-4 py-3 font-mono text-xs text-[#2D2118] focus:outline-none resize-y whitespace-pre"
+                    />
+                  ) : (
+                    <div className="p-4 max-h-72 overflow-auto">
+                      <CifraAlinhada
+                        texto={diagnostico.texto}
+                        tomOriginal={tom}
+                        semitons={0}
+                        className="text-xs"
+                      />
+                    </div>
+                  )}
+                </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -342,11 +516,15 @@ export function ImportarCifraModal({
               Cancelar
             </button>
             <button
-              onClick={salvar}
+              onClick={varios ? salvarVarios : salvar}
               disabled={!podeSalvar}
               className="px-6 py-2.5 rounded-full bg-[#7A2332] text-[#FFF9F2] text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition cursor-pointer"
             >
-              {musicaExistente ? 'Substituir cifra' : 'Salvar no repertório'}
+              {varios
+                ? `Salvar ${marcados} ${marcados === 1 ? 'canto' : 'cantos'}`
+                : musicaExistente
+                  ? 'Substituir cifra'
+                  : 'Salvar no repertório'}
             </button>
           </div>
         </footer>

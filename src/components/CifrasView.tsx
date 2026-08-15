@@ -50,6 +50,9 @@ export function CifrasView({
   const [busca, setBusca] = useState('');
   const [momento, setMomento] = useState<string | null>(null);
   const [modoPalco, setModoPalco] = useState(false);
+  const [telaLarga, setTelaLarga] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
+  );
   const [mostrarControle, setMostrarControle] = useState(false);
 
   // Preferências de aparelho: sobrevivem ao fechar o app.
@@ -78,6 +81,14 @@ export function CifrasView({
   useEffect(() => { parar(); }, [selectedSong.id, parar]);
 
   useEffect(() => { onModoPalco(modoPalco); }, [modoPalco, onModoPalco]);
+
+  // Girar o tablet muda a resposta, então não basta ler uma vez na montagem.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const aoMudar = (e: MediaQueryListEvent) => setTelaLarga(e.matches);
+    mq.addEventListener('change', aoMudar);
+    return () => mq.removeEventListener('change', aoMudar);
+  }, []);
   useEffect(() => () => onModoPalco(false), [onModoPalco]);
 
   // Atalhos de teclado — para quem ensaia com o notebook na estante.
@@ -131,11 +142,17 @@ export function CifrasView({
 
   const escalaTexto = ['text-[13px]', 'text-sm', 'text-base', 'text-lg', 'text-xl'][tamanho] ?? 'text-sm';
 
+  // Duas colunas só onde há largura sobrando. Num tablet deitado a cifra usava
+  // 654 px de 1024 e sobravam 370 em branco; em duas colunas o canto inteiro
+  // cabe sem rolar, que é o ponto de ler no atril. No celular a coluna ficaria
+  // mais estreita que a linha e cortaria a letra ao meio, então nem se oferece.
+  const duasColunas = modoPalco && telaLarga;
+
   return (
-    <div className={`flex flex-col w-full ${modoPalco ? 'pb-32' : 'pb-24'}`}>
+    <div className={`flex flex-col w-full ${modoPalco ? 'pb-32' : 'pb-nav'}`}>
       {/* ── Barra do músico: uma linha, sempre visível ────────────────────── */}
       <div
-        className={`sticky z-30 bg-[#FFF9F2]/95 backdrop-blur-md border-b border-[#7A2332]/15 ${
+        className={`sticky z-30 bg-[#FFF9F2]/95 backdrop-blur-md border-b border-[#7A2332]/15 print:hidden ${
           modoPalco ? 'top-0' : 'top-16 md:top-16'
         }`}
       >
@@ -188,6 +205,18 @@ export function CifrasView({
             }`}
           >
             <span aria-hidden className="material-symbols-outlined text-xl">{rolando ? 'pause' : 'play_arrow'}</span>
+          </button>
+
+          {/* Folha A4 — imprimir ou salvar em PDF é a mesma caixa de diálogo
+              no celular e no computador, e é o caminho que funciona em qualquer
+              aparelho para levar a cifra ao atril. */}
+          <button
+            onClick={() => window.print()}
+            aria-label="Folha A4 para imprimir ou salvar em PDF"
+            title="Folha A4 — imprimir ou salvar em PDF"
+            className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-white text-[#7A2332] border border-[#7A2332]/20 hover:border-[#7A2332]/50 transition cursor-pointer"
+          >
+            <span aria-hidden className="material-symbols-outlined text-xl">print</span>
           </button>
 
           {/* Palco */}
@@ -390,9 +419,28 @@ export function CifrasView({
       </div>
 
       {/* ── A cifra ─────────────────────────────────────────────────────── */}
-      <div className="max-w-3xl mx-auto w-full px-3 sm:px-5 py-6">
+      <div className={`mx-auto w-full px-3 sm:px-5 py-6 print:max-w-none print:p-0 ${
+        duasColunas ? 'max-w-6xl' : 'max-w-3xl'
+      }`}>
+        {/* Cabeçalho da folha A4. Só no papel: o atril precisa saber que canto
+            é, em que tom está sendo tocado e de quem é a folha, porque a folha
+            se solta do aplicativo e vai parar na pasta de outra pessoa. */}
+        <header className="hidden print:block mb-4 pb-2 border-b border-black">
+          <h2 className="font-serif text-xl font-bold">{selectedSong.title}</h2>
+          <p className="text-[10pt] mt-0.5">
+            {selectedSong.part}
+            {' · '}
+            {semitons === 0
+              ? `Tom ${selectedSong.key}`
+              : `Escrita em ${selectedSong.key} · tocando em ${tomAtual}`}
+          </p>
+          <p className="text-[8pt] mt-1">
+            Ministério Louvor &amp; Aliança · Paróquia São Judas Tadeu — Americana/SP
+          </p>
+        </header>
+
         {!modoPalco && (
-          <header className="mb-5 flex items-start justify-between gap-3 border-b border-[#7A2332]/15 pb-4">
+          <header className="mb-5 flex items-start justify-between gap-3 border-b border-[#7A2332]/15 pb-4 print:hidden">
             <div className="min-w-0">
               <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#7A2332] leading-tight">
                 {selectedSong.title}
@@ -429,16 +477,17 @@ export function CifrasView({
           </header>
         )}
 
-        <div className={`bg-white rounded-2xl border border-[#7A2332]/15 p-4 sm:p-6 ${escalaTexto}`}>
+        <div className={`bg-white rounded-2xl border border-[#7A2332]/15 p-4 sm:p-6 print:border-0 print:p-0 print:rounded-none ${escalaTexto}`}>
           <CifraAlinhada
             texto={selectedSong.fullChordText}
             tomOriginal={selectedSong.key}
             semitons={semitons}
+            duasColunas={duasColunas}
           />
         </div>
 
         {/* Tamanho da letra: perto da cifra, que é onde a dúvida aparece */}
-        <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="mt-3 flex items-center justify-between gap-2 print:hidden">
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] uppercase tracking-wider font-bold text-[#5C4A3E]">Letra</span>
             <button
@@ -472,7 +521,7 @@ export function CifrasView({
 
       {/* ── Rodapé: acervo. Fora do caminho de quem só quer tocar ───────── */}
       {!modoPalco && (
-        <div className="max-w-3xl mx-auto w-full px-3 sm:px-5 pb-8 grid sm:grid-cols-2 gap-2.5">
+        <div className="max-w-3xl mx-auto w-full px-3 sm:px-5 pb-8 grid sm:grid-cols-2 gap-2.5 print:hidden">
           <button
             onClick={onImportarCifra}
             className="flex items-center justify-center gap-2 h-12 rounded-2xl bg-[#7A2332] text-[#FFF9F2] text-sm font-bold hover:brightness-110 transition cursor-pointer"
