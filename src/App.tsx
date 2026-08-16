@@ -31,6 +31,7 @@ import { ImportarCifraModal } from './components/ImportarCifraModal';
 import { UploadMediaModal } from './components/UploadMediaModal';
 import { NewPlaylistModal } from './components/NewPlaylistModal';
 import { BoasVindas } from './components/BoasVindas';
+import { Aviso, useAviso } from './components/Aviso';
 import { MINISTERIO, grupoConfigurado } from './lib/config';
 import { useLocal } from './hooks/useLocal';
 
@@ -45,6 +46,11 @@ export default function App() {
   // conteúdo continua acessível em Mais → Como usar o app.
   const [jaViuOnboarding, setJaViuOnboarding] = useLocal('la:onboarding-visto', false);
   const [ajudaAberta, setAjudaAberta] = useState(false);
+
+  // Confirmação do que acabou de acontecer: salvar e apagar não davam retorno
+  // nenhum, e com exclusão isso é pior — dá para tocar de novo achando que o
+  // primeiro toque não pegou.
+  const { aviso, mostrar: mostrarAviso, fechar: fecharAviso } = useAviso();
   const grupoWhatsApp = grupoConfigurado();
 
   // Perfil de quem está usando o app. Enquanto não houver login, o padrão é o
@@ -63,16 +69,28 @@ export default function App() {
   // Application State
   const [celebration, setCelebration] = useState<Celebration>(INITIAL_CELEBRATION);
   const [musicians] = useState<Musician[]>(INITIAL_MUSICIANS);
-  const [songs, setSongs] = useState<LiturgicalSong[]>(INITIAL_SONGS);
-  // Pode ficar sem nenhuma: quem importa uma missa inteira também precisa
-  // poder apagar tudo e recomeçar limpo.
-  const [selectedSong, setSelectedSong] = useState<LiturgicalSong | null>(INITIAL_SONGS[0] ?? null);
+  // O repertório é do ministério, não preferência de aparelho — mas enquanto
+  // não há banco, o localStorage é o que existe. Sem isto, apagar uma cifra e
+  // reabrir o app trazia todas de volta, e o que era importado sumia.
+  const [songs, setSongs] = useLocal<LiturgicalSong[]>('la:repertorio', INITIAL_SONGS);
+  // Guardamos o id, não a música inteira: uma cópia guardada envelheceria em
+  // relação ao repertório — a cifra seria corrigida e a tela continuaria
+  // mostrando a versão antiga. Se o id guardado não existir mais (apagado num
+  // acesso anterior), cai na primeira. Pode ficar sem nenhuma, de propósito.
+  const [selectedSongId, setSelectedSongId] = useLocal<string | null>(
+    'la:cifra-aberta', INITIAL_SONGS[0]?.id ?? null
+  );
+  const selectedSong =
+    songs.find((s) => s.id === selectedSongId) ?? songs[0] ?? null;
+  const setSelectedSong = (musica: LiturgicalSong) => setSelectedSongId(musica.id);
   const [notices, setNotices] = useState<Notice[]>(INITIAL_NOTICES);
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [galleryMedia, setGalleryMedia] = useState<GalleryMediaItem[]>(GALLERY_MEDIA);
   const [playlists, setPlaylists] = useState<CelebrationPlaylist[]>(INITIAL_PLAYLISTS);
   const [pastCelebrations] = useState<PastCelebration[]>(INITIAL_PAST_CELEBRATIONS);
-  const [activeSongIds, setActiveSongIds] = useState<string[]>(INITIAL_SONGS.map((s) => s.id));
+  const [activeSongIds, setActiveSongIds] = useLocal<string[]>(
+    'la:escala-musicas', INITIAL_SONGS.map((s) => s.id)
+  );
 
   // Modal Controllers
   const [isNewNoticeOpen, setIsNewNoticeOpen] = useState<boolean>(false);
@@ -150,9 +168,10 @@ export default function App() {
         ? prev.map((s) => (s.id === song.id ? song : s))
         : [...prev, song]
     );
-    setSelectedSong(song);
+    setSelectedSongId(song.id);
     setCurrentTab('cifras');
     setCifraEmEdicao(null);
+    mostrarAviso(`“${song.title}” salva no repertório`);
   };
 
   /**
@@ -172,17 +191,24 @@ export default function App() {
   const handleExcluirCifras = (ids: string[]) => {
     if (ids.length === 0) return;
     const apagados = new Set(ids);
+    const restantes = songs.filter((s) => !apagados.has(s.id));
 
-    setSongs((prev) => {
-      const restantes = prev.filter((s) => !apagados.has(s.id));
-      // Se a que estava aberta foi apagada, abre a primeira que sobrou.
-      setSelectedSong((atual) =>
-        atual && apagados.has(atual.id) ? (restantes[0] ?? null) : atual
-      );
-      return restantes;
-    });
-
+    setSongs(restantes);
     setActiveSongIds((prev) => prev.filter((id) => !apagados.has(id)));
+
+    // Se a que estava aberta foi apagada, abre a primeira que sobrou. Fora do
+    // updater de propósito: efeito colateral dentro dele roda duas vezes no
+    // StrictMode.
+    if (selectedSongId && apagados.has(selectedSongId)) {
+      setSelectedSongId(restantes[0]?.id ?? null);
+    }
+
+    mostrarAviso(
+      ids.length === 1
+        ? 'Cifra excluída do repertório'
+        : `${ids.length} cifras excluídas do repertório`,
+      'apagou'
+    );
   };
 
   const handleSalvarVariasCifras = (novas: LiturgicalSong[]) => {
@@ -191,9 +217,14 @@ export default function App() {
       const ids = new Set(novas.map((n) => n.id));
       return [...prev.filter((s) => !ids.has(s.id)), ...novas];
     });
-    setSelectedSong(novas[0]);
+    setSelectedSongId(novas[0].id);
     setCurrentTab('cifras');
     setCifraEmEdicao(null);
+    mostrarAviso(
+      novas.length === 1
+        ? '1 canto salvo no repertório'
+        : `${novas.length} cantos salvos no repertório`
+    );
   };
 
   // Add new media item
@@ -389,6 +420,8 @@ export default function App() {
         songs={songs}
         onSavePlaylist={handleSaveNewPlaylist}
       />
+
+      <Aviso aviso={aviso} onFechar={fecharAviso} />
     </div>
   );
 }
