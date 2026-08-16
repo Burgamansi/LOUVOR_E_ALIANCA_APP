@@ -5,6 +5,8 @@ import {
 } from '../data/missas';
 import type { ArquivoMissa, Missa } from '../data/missas';
 import { VisualizadorDocumento } from './VisualizadorDocumento';
+import { EditarArquivoModal } from './EditarArquivoModal';
+import { useLocal } from '../hooks/useLocal';
 
 const ICONE: Record<ArquivoMissa['tipo'], string> = {
   pdf: 'picture_as_pdf',
@@ -48,6 +50,37 @@ export function MissasView() {
   const [busca, setBusca] = useState('');
   const [preview, setPreview] = useState<{ titulo: string; sub: string; id: string } | null>(null);
 
+  /**
+   * Arquivos trocados ou acrescentados neste aparelho, por slug de missa.
+   *
+   * O acervo de missas.ts é o mapeamento do Drive, feito uma vez. Quando um
+   * arquivo passa a ser outro — foi refeito e subiu com id novo — a pessoa
+   * precisa poder apontar o app para ele sem esperar um deploy.
+   *
+   * Fica no localStorage porque não há banco: vale só neste aparelho, e a tela
+   * diz isso. Sem esse aviso alguém troca o roteiro no celular, vai para a
+   * missa achando que a equipe está vendo o mesmo, e não está.
+   */
+  const [arquivosLocais, setArquivosLocais] = useLocal<Record<string, ArquivoMissa[]>>(
+    'la:missas-arquivos', {}
+  );
+  const [editando, setEditando] = useState<
+    { missa: Missa; arquivo: ArquivoMissa | null; indice: number } | null
+  >(null);
+
+  const arquivosDe = (missa: Missa) => arquivosLocais[missa.slug] ?? missa.arquivos;
+  const foiAlterada = (missa: Missa) => arquivosLocais[missa.slug] !== undefined;
+
+  const gravarArquivos = (missa: Missa, lista: ArquivoMissa[]) =>
+    setArquivosLocais((atual) => ({ ...atual, [missa.slug]: lista }));
+
+  const voltarAoOriginal = (missa: Missa) =>
+    setArquivosLocais((atual) => {
+      const copia = { ...atual };
+      delete copia[missa.slug];
+      return copia;
+    });
+
   // Abre sozinha a celebração de hoje — ou a mais próxima dela.
   const [aberta, setAberta] = useState<string | null>(
     () => missaMaisProxima(hojeIso())?.slug ?? null
@@ -70,7 +103,7 @@ export function MissasView() {
   }, [ano, mes, busca]);
 
   const arquivosNaLista = useMemo(
-    () => lista.reduce((soma, m) => soma + m.arquivos.length, 0),
+    () => lista.reduce((soma, m) => soma + arquivosDe(m).length, 0),
     [lista]
   );
 
@@ -219,7 +252,7 @@ export function MissasView() {
                         </span>
                       ) : (
                         <span className="text-[10px] text-[#5C4A3E]">
-                          {missa.arquivos.length} arquivo{missa.arquivos.length === 1 ? '' : 's'}
+                          {arquivosDe(missa).length} arquivo{arquivosDe(missa).length === 1 ? '' : 's'}
                         </span>
                       )}
                     </div>
@@ -245,13 +278,13 @@ export function MissasView() {
                       </p>
                     )}
 
-                    {missa.arquivos.length === 0 ? (
+                    {arquivosDe(missa).length === 0 ? (
                       <p className="text-sm text-[#5C4A3E] italic">
                         Nenhum arquivo cadastrado para esta celebração.
                       </p>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        {missa.arquivos.map((arq) => (
+                        {arquivosDe(missa).map((arq, iArq) => (
                           <div
                             key={arq.driveFileId}
                             className="flex flex-col gap-2 bg-white rounded-xl border border-[#7A2332]/15 p-3"
@@ -265,7 +298,11 @@ export function MissasView() {
                                   {arq.nomeExibicao}
                                 </p>
                                 <p className="text-[10px] text-[#5C4A3E]">
-                                  {ROTULO[arq.tipo]} · {tamanhoLegivel(arq.tamanhoBytes)}
+                                  {/* Um arquivo trocado aqui não tem tamanho: ele
+                                      vem da varredura do Drive. Melhor omitir do
+                                      que anunciar "0 KB". */}
+                                  {ROTULO[arq.tipo]}
+                                  {arq.tamanhoBytes > 0 && ` · ${tamanhoLegivel(arq.tamanhoBytes)}`}
                                 </p>
                               </div>
                             </div>
@@ -275,7 +312,9 @@ export function MissasView() {
                                 onClick={() =>
                                   setPreview({
                                     titulo: `${missa.tituloLiturgico} — ${arq.nomeExibicao}`,
-                                    sub: `${ROTULO[arq.tipo]} · ${tamanhoLegivel(arq.tamanhoBytes)}`,
+                                    sub: arq.tamanhoBytes > 0
+                                      ? `${ROTULO[arq.tipo]} · ${tamanhoLegivel(arq.tamanhoBytes)}`
+                                      : ROTULO[arq.tipo],
                                     id: arq.driveFileId,
                                   })
                                 }
@@ -293,11 +332,48 @@ export function MissasView() {
                               >
                                 <span aria-hidden className="material-symbols-outlined text-sm">open_in_new</span>
                               </a>
+                              <button
+                                onClick={() => setEditando({ missa, arquivo: arq, indice: iArq })}
+                                aria-label={`Trocar ou remover ${arq.nomeExibicao}`}
+                                title="Trocar ou remover"
+                                className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-[#7A2332]/25 text-[#7A2332] hover:bg-[#7A2332]/10 transition cursor-pointer"
+                              >
+                                <span aria-hidden className="material-symbols-outlined text-sm">edit</span>
+                              </button>
                             </div>
                           </div>
                         ))}
                       </div>
                     )}
+
+                    {/* Trocar arquivo e acrescentar arquivo. O acervo veio da
+                        varredura do Drive; quando um documento e refeito e sobe
+                        com id novo, a pessoa aponta o app para ele aqui, sem
+                        esperar um deploy. */}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => setEditando({ missa, arquivo: null, indice: -1 })}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full border border-dashed border-[#7A2332]/30 text-[#7A2332] hover:bg-[#7A2332]/5 transition cursor-pointer"
+                      >
+                        <span aria-hidden className="material-symbols-outlined text-base">add</span>
+                        Adicionar arquivo
+                      </button>
+
+                      {foiAlterada(missa) && (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#C9A24A]/20 text-[#7A2332]">
+                            <span aria-hidden className="material-symbols-outlined text-sm">smartphone</span>
+                            alterado neste aparelho
+                          </span>
+                          <button
+                            onClick={() => voltarAoOriginal(missa)}
+                            className="text-[11px] font-bold text-[#5C4A3E] hover:text-[#7A2332] underline decoration-dotted cursor-pointer"
+                          >
+                            voltar ao original
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
               </article>
@@ -305,6 +381,33 @@ export function MissasView() {
           })}
         </div>
       )}
+
+      <EditarArquivoModal
+        aberto={editando !== null}
+        arquivo={editando?.arquivo ?? null}
+        tituloMissa={editando ? `${editando.missa.tituloLiturgico} · ${dataPorExtenso(editando.missa.data)}` : ''}
+        onFechar={() => setEditando(null)}
+        onSalvar={(novo) => {
+          if (!editando) return;
+          const atual = arquivosDe(editando.missa);
+          gravarArquivos(
+            editando.missa,
+            editando.indice < 0
+              ? [...atual, novo]
+              : atual.map((a, i) => (i === editando.indice ? novo : a))
+          );
+          setEditando(null);
+        }}
+        onRemover={
+          editando?.arquivo
+            ? () => {
+                const atual = arquivosDe(editando.missa);
+                gravarArquivos(editando.missa, atual.filter((_, i) => i !== editando.indice));
+                setEditando(null);
+              }
+            : undefined
+        }
+      />
 
       <VisualizadorDocumento
         aberto={preview !== null}
