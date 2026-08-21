@@ -119,9 +119,40 @@ export function CifraAlinhada({
           if (linha.tipo === 'vazia') return <div key={i} className="h-4" />;
 
           if (linha.tipo === 'secao') {
+            // O refrão é a seção que o músico procura de relance; ganha a
+            // faixa. As outras ficam no rótulo dourado de sempre.
+            const refrao = linha.secao === 'refrao';
             return (
-              <div key={i} className="mt-4 mb-1 font-sans text-xs font-bold uppercase tracking-wider text-[#C9A24A]">
+              <div
+                key={i}
+                data-secao={linha.secao}
+                className={`mt-4 mb-1 font-sans text-xs font-bold uppercase tracking-wider text-[#C9A24A] ${
+                  refrao ? 'border-l-2 border-[#C9A24A] pl-2' : ''
+                }`}
+              >
                 {linha.rotulo}
+              </div>
+            );
+          }
+
+          if (linha.tipo === 'revisao') {
+            // Nada foi inventado aqui: o que está escrito é o que veio do
+            // arquivo, e a faixa diz que ninguém conferiu ainda.
+            return (
+              <div
+                key={i}
+                role="note"
+                aria-label={`Revisão necessária: ${linha.motivo}`}
+                className="my-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 font-sans print:border-black"
+              >
+                <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                  <span aria-hidden className="material-symbols-outlined text-sm">warning</span>
+                  Revisão necessária
+                </p>
+                <p className="text-[11px] text-amber-900/80 leading-snug">{linha.motivo}</p>
+                {linha.texto && (
+                  <p className="mt-1 font-mono whitespace-pre text-[#2D2118]">{linha.texto}</p>
+                )}
               </div>
             );
           }

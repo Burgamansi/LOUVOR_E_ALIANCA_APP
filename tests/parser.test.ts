@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { analisarCifra, ehLinhaDeAcordes, deduzirTom, paraTexto } from '../src/lib/cifras/parser';
+import {
+  analisarCifra, ehLinhaDeAcordes, deduzirTom, paraTexto,
+  classificarSecao, lerMarcadorDeRevisao, ehLinhaMista,
+} from '../src/lib/cifras/parser';
 import { renderizar } from '../src/lib/cifras/render';
+import { MARCADOR_REVISAO, linhasParaRevisar, confiancaDaCifra } from '../src/lib/cifras/tipos';
+import { importarTexto } from '../src/lib/cifras/importar';
 
 describe('classificação de linha', () => {
   it('linha só de acordes, esparsa', () => {
@@ -81,5 +86,88 @@ describe('analisarCifra', () => {
     expect(paraTexto(c)).toBe(texto);
     const r = renderizar(c);
     expect(r[0].acordes).toBe('G          C         G');
+  });
+});
+
+describe('seções com papel musical', () => {
+  it.each([
+    ['Refrão', 'refrao'], ['REFRÃO:', 'refrao'], ['Coro', 'refrao'], ['Estribilho', 'refrao'],
+    ['Intro', 'intro'], ['Introdução', 'intro'], ['Pré-refrão', 'pre_refrao'],
+    ['Ponte', 'ponte'], ['Solo', 'instrumental'], ['Instrumental', 'instrumental'],
+    ['Final', 'final'], ['Coda', 'final'], ['Estrofe 2', 'verso'], ['1ª', 'verso'],
+    ['Parte B', 'verso'], ['Qualquer coisa', 'desconhecido'],
+  ])('%s → %s', (rotulo, tipo) => {
+    expect(classificarSecao(rotulo)).toBe(tipo);
+  });
+
+  it('a seção no texto carrega o tipo e o rótulo original', () => {
+    const c = analisarCifra('[Refrão]\nG   C\nCantai', 'G');
+    expect(c.linhas[0]).toEqual({ tipo: 'secao', rotulo: 'Refrão', secao: 'refrao' });
+  });
+});
+
+describe('REVISÃO NECESSÁRIA — nada é inventado', () => {
+  it('linha com marcador explícito vira revisao e sobrevive à ida e volta em texto', () => {
+    const texto = `${MARCADOR_REVISAO} Imagem 1 (foto.png) não foi interpretada\nG   C\nLetra`;
+    const c = analisarCifra(texto, 'G');
+    expect(c.linhas[0]).toEqual({
+      tipo: 'revisao',
+      texto: 'Imagem 1 (foto.png) não foi interpretada',
+      motivo: 'Marcado para revisão na importação',
+      origem: 'marcador',
+    });
+    expect(paraTexto(c).split('\n')[0]).toBe(`${MARCADOR_REVISAO} Imagem 1 (foto.png) não foi interpretada`);
+  });
+
+  it('o marcador aceita variações de caixa e acento', () => {
+    expect(lerMarcadorDeRevisao('[revisao necessaria] x')).toBe('x');
+    expect(lerMarcadorDeRevisao('[ REVISÃO NECESSÁRIA ]')).toBe('');
+    expect(lerMarcadorDeRevisao('[Refrão]')).toBeNull();
+  });
+
+  it('acordes misturados com texto na mesma linha ficam marcados, sem chute de alinhamento', () => {
+    expect(ehLinhaMista('Senhor Am tende Em7 piedade D7')).toBe(true);
+    expect(ehLinhaMista('CC7  F  G  C  Am')).toBe(true);
+    const c = analisarCifra('CC7  F  G  C  Am\nLetra da música', 'C');
+    expect(c.linhas[0]).toMatchObject({ tipo: 'revisao', texto: 'CC7  F  G  C  Am', origem: 'heuristica' });
+    expect(c.linhas[1]).toEqual({ tipo: 'letra', texto: 'Letra da música', acordes: [] });
+  });
+
+  it('"Intro: Am G F E Am" é seção + acordes — reconhecido, não marcado', () => {
+    const c = analisarCifra('INTRO: Am G F E Am\nLetra', 'C');
+    expect(c.linhas[0]).toEqual({ tipo: 'secao', rotulo: 'INTRO', secao: 'intro' });
+    expect(c.linhas[1]).toMatchObject({ tipo: 'acordes' });
+    if (c.linhas[1].tipo !== 'acordes') throw new Error();
+    expect(c.linhas[1].acordes.map((a) => a.acorde)).toEqual(['Am', 'G', 'F', 'E', 'Am']);
+  });
+
+  it('verso que começa com palavra de seção continua letra', () => {
+    const c = analisarCifra('Final feliz da canção\nPonte de amor entre nós', 'C');
+    expect(c.linhas.every((l) => l.tipo === 'letra')).toBe(true);
+  });
+
+  it('letra com uma palavra que parece acorde continua letra', () => {
+    expect(ehLinhaMista('Em Deus confio')).toBe(false);
+    expect(ehLinhaMista('A Deus Pai todo poderoso')).toBe(false);
+    expect(ehLinhaMista('E a paz que vem de Ti')).toBe(false);
+  });
+
+  it('confiança e contagem refletem as linhas marcadas', () => {
+    const limpa = analisarCifra('G   C\nComo é bom\nD7   G\nNeste lugar', 'G');
+    expect(linhasParaRevisar(limpa)).toBe(0);
+    expect(confiancaDaCifra(limpa)).toBe(1);
+
+    const suja = analisarCifra(`G   C\nComo é bom\n${MARCADOR_REVISAO} trecho ilegível`, 'G');
+    expect(linhasParaRevisar(suja)).toBe(1);
+    expect(confiancaDaCifra(suja)).toBe(0.5);
+  });
+
+  it('o diagnóstico de importação expõe acordes, trechos a revisar e confiança', () => {
+    const d = importarTexto(`[Refrão]\nG   C   D7\nCantai louvores\n${MARCADOR_REVISAO} Imagem 1`);
+    expect(d.acordes).toEqual(['G', 'C', 'D7']);
+    expect(d.paraRevisar).toBe(1);
+    expect(d.confianca).toBe(0.5);
+    expect(d.secoes).toEqual(['Refrão']);
+    expect(d.avisos.some((a) => a.includes('REVISÃO NECESSÁRIA'))).toBe(true);
   });
 });

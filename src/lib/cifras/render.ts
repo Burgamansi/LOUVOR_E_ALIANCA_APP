@@ -13,6 +13,7 @@
 // é reconstruída, sempre a partir das âncoras.
 
 import { prefereBemol, semitonsEntre, transporAcorde, tomTransposto } from './acordes';
+import { MARCADOR_REVISAO } from './tipos';
 import type { Cifra, LinhaCifra, LinhaRenderizada } from './tipos';
 
 /**
@@ -90,6 +91,15 @@ export function renderizar(cifra: Cifra): LinhaRenderizada[] {
         return { tipo: 'secao', acordes: null, letra: `[${linha.rotulo}]` };
       case 'texto':
         return { tipo: 'texto', acordes: null, letra: linha.texto };
+      case 'revisao':
+        // O marcador escrito volta para o texto para sobreviver à edição; o
+        // deduzido pelo parser sai como estava, porque o texto original é a
+        // própria marca — reimportar deduz de novo.
+        return {
+          tipo: 'revisao',
+          acordes: null,
+          letra: linha.origem === 'marcador' ? `${MARCADOR_REVISAO} ${linha.texto}` : linha.texto,
+        };
       case 'vazia':
         return { tipo: 'vazia', acordes: null, letra: '' };
     }

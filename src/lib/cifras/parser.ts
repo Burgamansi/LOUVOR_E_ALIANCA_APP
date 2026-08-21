@@ -6,7 +6,7 @@
 
 import { ehAcorde, ehSimboloNeutro } from './acordes';
 import { renderizar } from './render';
-import type { Cifra, LinhaCifra, Ancora } from './tipos';
+import type { Cifra, LinhaCifra, Ancora, TipoSecao } from './tipos';
 
 interface Token { texto: string; col: number }
 
@@ -47,13 +47,83 @@ export function ehLinhaDeAcordes(linha: string): boolean {
   return densidade < 0.45 && tokens.length >= 2;
 }
 
-const RE_SECAO = /^\s*[\[({]?\s*(intro|introdu[çc][ãa]o|refr[ãa]o|estrofe|ponte|final|coda|solo|instrumental|parte\s*\w*|1[ªa]?|2[ªa]?|3[ªa]?)\b[^\]\)}]*[\])}]?\s*:?\s*$/i;
+// Um rótulo de seção é a palavra da seção, sozinha na linha, com no máximo um
+// complemento curto ("Estrofe 2", "Parte B", "Refrão:"). Sem isto, "Final
+// feliz da canção" e "Ponte de amor" — versos — viravam seção.
+const RE_SECAO = /^\s*[\[({]?\s*(intro|introdu[çc][ãa]o|pr[eé][\s-]?refr[ãa]o|refr[ãa]o|coro|estribilho|estrofe|verso|ponte|final|coda|solo|instrumental|interl[úu]dio|parte|1[ªa]?|2[ªa]?|3[ªa]?)\s*([A-Za-z0-9]{1,3})?\s*[\])}]?\s*:?\s*$/i;
 
 function ehSecao(linha: string): boolean {
   const t = linha.trim();
   if (!t) return false;
   if (/^\[.+\]$/.test(t)) return true;      // [Refrão]
   return RE_SECAO.test(t) && t.length <= 40;
+}
+
+/**
+ * "Intro: G D Em C" / "Refrão: Am F" — rótulo de seção seguido só de acordes.
+ * Não há letra para alinhar, então não há nada a inventar: vira uma seção e
+ * uma linha de acordes, as duas reconhecidas. Devolve null quando a linha
+ * não tem esse desenho.
+ */
+function lerSecaoComAcordes(linha: string): { rotulo: string; acordes: Ancora[] } | null {
+  const m = /^\s*([^:\[\]]{1,25}?)\s*:\s*(\S.*)$/.exec(linha);
+  if (!m) return null;
+  if (classificarSecao(m[1]) === 'desconhecido') return null;
+  if (!ehLinhaDeAcordes(m[2])) return null;
+  const inicio = linha.indexOf(m[2]);
+  const acordes = tokenizar(m[2])
+    .filter((t) => !ehSimboloNeutro(t.texto))
+    .map((t) => ({ col: t.col + inicio, acorde: t.texto }));
+  return { rotulo: m[1].trim(), acordes };
+}
+
+const semAcento = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036F]/g, '').toLowerCase();
+
+/**
+ * O papel musical de um rótulo de seção. "Refrão", "REFRÃO:", "[Coro]" e
+ * "Estribilho" são todos refrão; o que não se reconhece fica `desconhecido`
+ * — nunca se chuta.
+ */
+export function classificarSecao(rotulo: string): TipoSecao {
+  const r = semAcento(rotulo.trim());
+  if (/^(intro|introducao)\b/.test(r)) return 'intro';
+  if (/^(pre[\s-]?refrao|pre[\s-]?coro)\b/.test(r)) return 'pre_refrao';
+  if (/^(refrao|coro|estribilho)\b/.test(r)) return 'refrao';
+  if (/^ponte\b/.test(r)) return 'ponte';
+  if (/^(solo|instrumental|interludio|passagem)\b/.test(r)) return 'instrumental';
+  if (/^(final|coda|ending|encerramento)\b/.test(r)) return 'final';
+  if (/^(estrofe|verso|parte|[123](a|ª)?)\b/.test(r)) return 'verso';
+  return 'desconhecido';
+}
+
+const RE_MARCADOR = /^\s*\[\s*revis[aã]o\s+necess[aá]ria\s*\]\s*(.*)$/i;
+
+/** A linha traz o marcador explícito de revisão? Devolve o texto depois dele. */
+export function lerMarcadorDeRevisao(linha: string): string | null {
+  const m = RE_MARCADOR.exec(linha);
+  return m ? m[1].trim() : null;
+}
+
+/**
+ * Linha que mistura acordes com texto: "INTRO: Am G F E Am", "CC7 F G C Am",
+ * "Refrão: G D Em". Não dá para saber sobre qual sílaba cada acorde cai —
+ * então nada é inventado; a linha fica marcada e a pessoa decide.
+ *
+ * A regra é por maioria, com prova forte: ou dois tokens que só podem ser
+ * acorde (Am, D7, F#, C/G) com metade da linha sendo acorde, ou um token
+ * forte numa linha longa que é quase toda acorde ("CC7 F G C Am" — um erro de
+ * digitação numa linha de acordes). "Em Deus confio" tem um acorde em três
+ * tokens e continua letra.
+ */
+export function ehLinhaMista(linha: string): boolean {
+  const tokens = tokenizar(linha);
+  if (tokens.length < 2) return false;
+  const acordes = tokens.filter((t) => ehAcorde(t.texto) || ehSimboloNeutro(t.texto)).length;
+  const fortes = tokens.filter(
+    (t) => ehAcorde(t.texto) && /[#b0-9]|m(?!aj)|sus|dim|aug|maj|add|º|°|ø|Δ|\//.test(t.texto)
+  ).length;
+  const fracao = acordes / tokens.length;
+  return (fortes >= 2 && fracao >= 0.5) || (fortes >= 1 && tokens.length >= 4 && fracao >= 0.75);
 }
 
 /**
@@ -72,8 +142,24 @@ export function analisarCifra(texto: string, tomOriginal: string, origem = 'manu
 
     if (!linha.trim()) { linhas.push({ tipo: 'vazia' }); continue; }
 
+    // O marcador vem antes de tudo: "[REVISÃO NECESSÁRIA] …" começa com
+    // colchete e, sem esta guarda, viraria uma seção chamada "REVISÃO".
+    const marcado = lerMarcadorDeRevisao(linha);
+    if (marcado !== null) {
+      linhas.push({ tipo: 'revisao', texto: marcado, motivo: 'Marcado para revisão na importação', origem: 'marcador' });
+      continue;
+    }
+
     if (ehSecao(linha)) {
-      linhas.push({ tipo: 'secao', rotulo: linha.trim().replace(/^[\[({]|[\])}]$/g, '').trim() });
+      const rotulo = linha.trim().replace(/^[\[({]|[\])}]$/g, '').replace(/:$/, '').trim();
+      linhas.push({ tipo: 'secao', rotulo, secao: classificarSecao(rotulo) });
+      continue;
+    }
+
+    const secaoComAcordes = lerSecaoComAcordes(linha);
+    if (secaoComAcordes) {
+      linhas.push({ tipo: 'secao', rotulo: secaoComAcordes.rotulo, secao: classificarSecao(secaoComAcordes.rotulo) });
+      linhas.push({ tipo: 'acordes', acordes: secaoComAcordes.acordes });
       continue;
     }
 
@@ -93,6 +179,16 @@ export function analisarCifra(texto: string, tomOriginal: string, origem = 'manu
       } else {
         linhas.push({ tipo: 'acordes', acordes });
       }
+      continue;
+    }
+
+    if (ehLinhaMista(linha)) {
+      linhas.push({
+        tipo: 'revisao',
+        texto: linha,
+        motivo: 'Acordes misturados com texto na mesma linha — não dá para saber sobre qual sílaba cada um cai',
+        origem: 'heuristica',
+      });
       continue;
     }
 

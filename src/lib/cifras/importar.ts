@@ -9,9 +9,14 @@
 
 import { analisarCifra, deduzirTom, ehLinhaDeAcordes } from './parser';
 import { ehAcorde } from './acordes';
+import { campoHarmonico } from './render';
 import { dividirEmCantos } from './cantos';
 import type { CantoDetectado } from './cantos';
+import { confiancaDaCifra, linhasParaRevisar } from './tipos';
 import type { Cifra } from './tipos';
+import { validarArquivo, EXTENSOES_CIFRA, LIMITE_CIFRA_BYTES } from '../upload/validar';
+
+export type OrigemImportacao = 'docx' | 'pdf' | 'imagem' | 'txt' | 'colado';
 
 // deduzirTom mora no parser, que é onde ela opera (sobre uma Cifra), mas
 // continua saindo daqui para quem já a importava deste módulo.
@@ -25,7 +30,13 @@ export interface DiagnosticoImportacao {
   tomSugerido: string;
   linhasDeAcorde: number;
   acordesDistintos: number;
+  /** Os acordes encontrados, na ordem em que aparecem — a tela mostra como chips. */
+  acordes: string[];
   secoes: string[];
+  /** Linhas marcadas como REVISÃO NECESSÁRIA. Zero = leitura limpa. */
+  paraRevisar: number;
+  /** 0 a 1 — fração do conteúdo reconhecido sem dúvida. */
+  confianca: number;
   /**
    * Os cantos encontrados dentro do arquivo. Um arquivo de missa traz oito ou
    * dez; um arquivo de uma música só traz um, e aí o fluxo é o de sempre.
@@ -33,7 +44,24 @@ export interface DiagnosticoImportacao {
   cantos: CantoDetectado[];
   /** O que pode ter se perdido. Vazio = importação limpa. */
   avisos: string[];
-  origem: 'docx' | 'txt' | 'colado';
+  origem: OrigemImportacao;
+  /**
+   * Imagens que vieram dentro do documento (Word com figura no meio da cifra,
+   * PDF escaneado, foto). Não são interpretadas — o app não tem OCR — mas
+   * ficam aqui para a tela mostrar ao lado do trecho marcado para revisão,
+   * de modo que a pessoa transcreva olhando para a imagem.
+   */
+  imagens: ImagemDoDocumento[];
+}
+
+export interface ImagemDoDocumento {
+  /** Número de ordem no documento, a partir de 1 — é o que a linha de revisão cita. */
+  indice: number;
+  nome: string;
+  /** data: URL, pronta para <img src>. */
+  dataUrl: string;
+  /** Página de origem, quando faz sentido (PDF). */
+  pagina?: number;
 }
 
 /**
@@ -65,10 +93,15 @@ export function normalizarTexto(bruto: string): string {
     .replace(/^\n+/, '');
 }
 
-function analisarConteudo(texto: string, origem: DiagnosticoImportacao['origem']): DiagnosticoImportacao {
+export function analisarConteudo(
+  texto: string,
+  origem: OrigemImportacao,
+  imagens: ImagemDoDocumento[] = []
+): DiagnosticoImportacao {
   const linhas = texto.split('\n');
   const cifra = analisarCifra(texto, 'C', origem);
   const tomSugerido = deduzirTom(cifra);
+  const paraRevisar = linhasParaRevisar(cifra);
 
   const distintos = new Set<string>();
   let linhasDeAcorde = 0;
@@ -104,6 +137,12 @@ function analisarConteudo(texto: string, origem: DiagnosticoImportacao['origem']
     avisos.push('Nenhuma marcação de seção ([Intro], [Refrão]) foi encontrada — a cifra vai aparecer corrida.');
   }
 
+  if (paraRevisar > 0) {
+    avisos.push(
+      `${paraRevisar} ${paraRevisar === 1 ? 'trecho ficou marcado' : 'trechos ficaram marcados'} como REVISÃO NECESSÁRIA. Nada foi inventado no lugar: confira e corrija antes de confirmar.`
+    );
+  }
+
   const cantos = dividirEmCantos(texto);
 
   // Vale a pena avisar só quando o arquivo é claramente uma missa inteira e
@@ -121,33 +160,68 @@ function analisarConteudo(texto: string, origem: DiagnosticoImportacao['origem']
     tomSugerido,
     linhasDeAcorde,
     acordesDistintos: distintos.size,
+    acordes: campoHarmonico(cifra),
     secoes,
+    paraRevisar,
+    confianca: confiancaDaCifra(cifra),
     cantos,
     avisos,
     origem,
+    imagens,
   };
 }
 
-/** Lê o arquivo escolhido e devolve o diagnóstico, sem salvar nada. */
+/**
+ * Lê o arquivo escolhido e devolve o diagnóstico, sem salvar nada.
+ *
+ * Valida extensão, MIME e tamanho ANTES de ler qualquer byte. Cada formato
+ * tem o seu extrator em `./extrair/`, carregado sob demanda para não pesar o
+ * bundle de quem nunca importa aquele tipo.
+ */
 export async function importarArquivo(arquivo: File): Promise<DiagnosticoImportacao> {
-  if (/\.docx$/i.test(arquivo.name)) {
-    // Sob demanda: o mammoth (≈ 200 KB) só entra no bundle de quem importa um
-    // .docx, não no carregamento do app inteiro.
-    const mammoth = await import('mammoth');
-    const { value } = await mammoth.extractRawText({ arrayBuffer: await arquivo.arrayBuffer() });
-    return analisarConteudo(normalizarTexto(value), 'docx');
-  }
-
-  if (/\.docx?$/i.test(arquivo.name)) {
+  if (/\.doc$/i.test(arquivo.name)) {
     throw new Error(
       'Arquivos .doc (Word antigo) não são lidos no navegador. Abra no Word e salve como .docx ou como .txt.'
     );
   }
 
-  return analisarConteudo(normalizarTexto(await arquivo.text()), 'txt');
+  const validacao = validarArquivo(arquivo, { extensoes: EXTENSOES_CIFRA, limiteBytes: LIMITE_CIFRA_BYTES });
+  if (!validacao.ok) throw new Error(validacao.erro);
+
+  switch (validacao.extensao) {
+    case 'docx': {
+      const { extrairDocx } = await import('./extrair/docx');
+      const { texto, imagens } = await extrairDocx(await arquivo.arrayBuffer());
+      return analisarConteudo(normalizarTexto(texto), 'docx', imagens);
+    }
+    case 'pdf': {
+      const { extrairPdf } = await import('./extrair/pdf');
+      const { texto, imagens } = await extrairPdf(await arquivo.arrayBuffer());
+      return analisarConteudo(normalizarTexto(texto), 'pdf', imagens);
+    }
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'webp': {
+      const { extrairImagem } = await import('./extrair/imagem');
+      const { texto, imagens } = await extrairImagem(arquivo, validacao.nome);
+      return analisarConteudo(normalizarTexto(texto), 'imagem', imagens);
+    }
+    default:
+      return analisarConteudo(normalizarTexto(await arquivo.text()), 'txt');
+  }
 }
 
 /** Mesmo diagnóstico, para texto colado direto na caixa. */
 export function importarTexto(bruto: string): DiagnosticoImportacao {
   return analisarConteudo(normalizarTexto(bruto), 'colado');
+}
+
+/**
+ * Reanalisa o texto depois de a pessoa editar na tela de revisão. Mantém a
+ * origem e as imagens do diagnóstico anterior: editar o texto não faz o
+ * arquivo deixar de ter sido um PDF, nem some com a figura que ele trazia.
+ */
+export function reanalisar(anterior: DiagnosticoImportacao, texto: string): DiagnosticoImportacao {
+  return analisarConteudo(normalizarTexto(texto), anterior.origem, anterior.imagens);
 }
