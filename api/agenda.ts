@@ -5,7 +5,7 @@
 // É a fonte da "Agenda por Missas" e da listagem em /missas.
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from './_db';
+import { db } from './_db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

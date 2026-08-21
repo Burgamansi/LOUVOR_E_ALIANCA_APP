@@ -8,7 +8,7 @@
 // (hoje, o PDF do roteiro; o pptx de ~70 MB fica no Drive e não é público).
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from '../_db';
+import { db } from '../_db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

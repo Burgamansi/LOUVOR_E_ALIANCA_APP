@@ -5,7 +5,7 @@
 // Esta rota separa os dois casos sem nunca expor o token.
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from './_db';
+import { db } from './_db.js';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   const url = process.env.TURSO_DATABASE_URL;
