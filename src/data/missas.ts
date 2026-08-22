@@ -1041,14 +1041,24 @@ export function anoDaMissa(iso: string): number {
 /** O acervo em ordem cronológica inversa — a celebração mais recente primeiro. */
 export const MISSAS_POR_DATA: Missa[] = [...MISSAS].sort((a, b) => b.data.localeCompare(a.data));
 
-/** Os anos presentes no acervo, do mais recente para o mais antigo. */
-export const ANOS_DO_ACERVO: number[] =
-  [...new Set(MISSAS.map((m) => anoDaMissa(m.data)))].sort((a, b) => b - a);
+/**
+ * Os anos presentes num acervo, do mais recente para o mais antigo.
+ *
+ * Recebe a lista em vez de ler `MISSAS` direto porque o acervo deixou de ser
+ * só o embarcado: a tela mescla o que vem do banco, e os filtros de ano e mês
+ * precisam refletir o que está de fato na lista.
+ */
+export function anosDoAcervo(lista: Missa[] = MISSAS): number[] {
+  return [...new Set(lista.map((m) => anoDaMissa(m.data)))].sort((a, b) => b - a);
+}
+
+/** Os anos do acervo embarcado. Mantido para quem não tem a lista em mãos. */
+export const ANOS_DO_ACERVO: number[] = anosDoAcervo(MISSAS);
 
 /** Os meses com celebração num dado ano, em ordem de calendário. */
-export function mesesDoAno(ano: number): string[] {
+export function mesesDoAno(ano: number, lista: Missa[] = MISSAS): string[] {
   const numeros = new Set(
-    MISSAS.filter((m) => anoDaMissa(m.data) === ano).map((m) => Number(m.data.slice(5, 7)))
+    lista.filter((m) => anoDaMissa(m.data) === ano).map((m) => Number(m.data.slice(5, 7)))
   );
   return [...numeros].sort((a, b) => a - b).map((n) => MESES[n - 1]);
 }

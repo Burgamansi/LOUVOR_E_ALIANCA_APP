@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  MISSAS, MISSAS_POR_DATA, ANOS_DO_ACERVO, mesesDoAno, anoDaMissa,
+  anosDoAcervo, mesesDoAno, anoDaMissa,
   missaMaisProxima, hojeIso, dataPorExtenso, mesDaMissa, tamanhoLegivel,
 } from '../data/missas';
 import type { ArquivoMissa, Missa } from '../data/missas';
@@ -9,6 +9,7 @@ import { EditarArquivoModal } from './EditarArquivoModal';
 import type { ModoEdicao } from './EditarArquivoModal';
 import { StatusSalvamento } from './StatusSalvamento';
 import { usePersistente } from '../hooks/usePersistente';
+import { useAcervo } from '../hooks/useAcervo';
 
 const ICONE: Record<ArquivoMissa['tipo'], string> = {
   pdf: 'picture_as_pdf',
@@ -51,11 +52,16 @@ interface MissasViewProps {
 export function MissasView({ onAviso }: MissasViewProps) {
   const hoje = useMemo(() => hojeIso(), []);
 
+  // O acervo: embarcado no primeiro quadro, do banco quando ele responder.
+  const { missas: acervo, origem } = useAcervo();
+
+  const anos = useMemo(() => anosDoAcervo(acervo), [acervo]);
+
   // O ano de hoje, se o acervo tiver; senão o mais recente que tiver.
   const anoInicial = useMemo(() => {
     const atual = Number(hoje.slice(0, 4));
-    return ANOS_DO_ACERVO.includes(atual) ? atual : ANOS_DO_ACERVO[0];
-  }, [hoje]);
+    return anos.includes(atual) ? atual : anos[0];
+  }, [hoje, anos]);
 
   const [ano, setAno] = useState<number>(anoInicial);
   const [mes, setMes] = useState<string>(TODOS);
@@ -128,14 +134,14 @@ export function MissasView({ onAviso }: MissasViewProps) {
 
   // Abre sozinha a celebração de hoje — ou a mais próxima dela.
   const [aberta, setAberta] = useState<string | null>(
-    () => missaMaisProxima(hojeIso())?.slug ?? null
+    () => missaMaisProxima(hojeIso(), acervo)?.slug ?? null
   );
 
-  const meses = useMemo(() => mesesDoAno(ano), [ano]);
+  const meses = useMemo(() => mesesDoAno(ano, acervo), [ano, acervo]);
 
   const lista = useMemo(() => {
     const termo = chave(busca.trim());
-    return MISSAS_POR_DATA.filter((m) => {
+    return acervo.filter((m) => {
       if (anoDaMissa(m.data) !== ano) return false;
       if (mes !== TODOS && mesDaMissa(m.data) !== mes) return false;
       if (!termo) return true;
@@ -145,7 +151,7 @@ export function MissasView({ onAviso }: MissasViewProps) {
         chave(dataPorExtenso(m.data)).includes(termo)
       );
     });
-  }, [ano, mes, busca]);
+  }, [ano, mes, busca, acervo]);
 
   const arquivosNaLista = useMemo(
     () => lista.reduce((soma, m) => soma + arquivosDe(m).length, 0),
@@ -157,7 +163,7 @@ export function MissasView({ onAviso }: MissasViewProps) {
     setMes(TODOS);
     // Ao trocar de ano, abre a celebração daquele ano mais próxima de hoje,
     // em vez de deixar todos os cards fechados numa lista de quarenta.
-    const doAno = MISSAS.filter((m) => anoDaMissa(m.data) === novo);
+    const doAno = acervo.filter((m) => anoDaMissa(m.data) === novo);
     setAberta(missaMaisProxima(hoje, doAno)?.slug ?? null);
   };
 
@@ -177,7 +183,7 @@ export function MissasView({ onAviso }: MissasViewProps) {
       {/* Ano primeiro, mês depois. Com dois anos no acervo, um filtro só de mês
           misturaria junho de 2025 com junho de 2026 no mesmo botão. */}
       <div className="flex items-center gap-2 mb-3" role="group" aria-label="Ano">
-        {ANOS_DO_ACERVO.map((a) => (
+        {anos.map((a) => (
           <button
             key={a}
             onClick={() => trocarAno(a)}
@@ -229,6 +235,29 @@ export function MissasView({ onAviso }: MissasViewProps) {
           {lista.length} {lista.length === 1 ? 'missa' : 'missas'} ·{' '}
           {arquivosNaLista} {arquivosNaLista === 1 ? 'arquivo' : 'arquivos'}
         </span>
+
+        {/* De onde veio o que está na tela. Sem isto, quem olha não tem como
+            saber se está vendo o acervo do ministério ou a cópia que veio
+            dentro do aplicativo — e a diferença importa quando alguém corrige
+            um arquivo e quer saber se a equipe já está vendo. */}
+        {origem === 'banco' && (
+          <span
+            title="Acervo do ministério: todo mundo vê o mesmo"
+            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full whitespace-nowrap"
+          >
+            <span aria-hidden className="material-symbols-outlined text-sm">cloud_done</span>
+            Acervo do ministério
+          </span>
+        )}
+        {origem === 'falhou' && (
+          <span
+            title="Não deu para falar com o servidor. Estas são as missas que vieram dentro do aplicativo — funcionam, mas podem não ter as correções mais recentes."
+            className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full whitespace-nowrap"
+          >
+            <span aria-hidden className="material-symbols-outlined text-sm">cloud_off</span>
+            Acervo do aplicativo
+          </span>
+        )}
       </div>
 
       {lista.length === 0 ? (
