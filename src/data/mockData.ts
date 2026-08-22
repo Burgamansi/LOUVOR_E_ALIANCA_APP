@@ -8,7 +8,7 @@ export const INITIAL_CELEBRATION: Celebration = {
   timeStr: '09:00',
   confirmed: true,
   season: 'Tempo Comum',
-  coverImage: '/capa-missa-9h.jpg',
+  coverImage: '/Capa-oficial.png',
   liturgicalColor: 'Verde',
   repertoireStatus: 'Completo',
   confirmedMusiciansCount: 5,
@@ -467,7 +467,7 @@ export const DRIVE_EXTERNAL_LINKS: DriveExternalLink[] = [
     title: 'Liturgia Diária Oficial — CNBB',
     subtitle: 'Acompanhe as leituras, salmos e evangeliário diário.',
     badge: 'CNBB Oficial',
-    imageUrl: '/capa-missa-9h.jpg',
+    imageUrl: '/Capa-oficial.png',
     url: 'https://liturgia.cnbb.org.br/'
   },
   {
@@ -500,7 +500,7 @@ export const GALLERY_MEDIA: GalleryMediaItem[] = [
     id: 'gal-capa',
     title: 'A Missa das 9h — Louvor & Aliança',
     category: 'Nossa missa',
-    imageUrl: '/capa-missa-9h.jpg',
+    imageUrl: '/Capa-oficial.png',
     type: 'image',
     dateStr: 'Todo domingo',
     description: 'Mais que cantar, é servir. Mais que música, é oração. Mais que um grupo, é família.'

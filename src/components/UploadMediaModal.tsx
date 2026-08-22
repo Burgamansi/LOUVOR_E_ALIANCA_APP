@@ -24,8 +24,8 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
     if (!title.trim()) return;
 
     const defaultImage = mediaType === 'video'
-      ? '/capa-missa-9h.jpg'
-      : '/capa-missa-9h.jpg';
+      ? '/Capa-oficial.png'
+      : '/Capa-oficial.png';
 
     const newMedia: GalleryMediaItem = {
       id: `gal-${Date.now()}`,

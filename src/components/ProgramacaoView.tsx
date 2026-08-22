@@ -103,7 +103,7 @@ export const ProgramacaoView: React.FC<ProgramacaoViewProps> = ({
         <div className="relative w-full overflow-hidden bg-[#1A050B]">
           {/* Capa oficial da Missão Louvor & Aliança */}
           <img
-            src={celebration.coverImage || '/capa-missa-9h.jpg'}
+            src={celebration.coverImage || '/Capa-oficial.png'}
             alt="Missa das 9 Horas — Missão Louvor & Aliança: Cantar é Orar Duas Vezes"
             className="w-full h-auto block aspect-[1845/817] object-cover object-center"
             loading="eager"
