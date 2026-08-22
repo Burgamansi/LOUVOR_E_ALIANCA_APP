@@ -143,5 +143,11 @@ export function useAutoScroll({ velocidade, aoTerminar }: OpcoesAutoScroll) {
     };
   }, [rolando]);
 
-  return { rolando, alternar, parar, iniciar: () => setRolando(true) };
+  /** Parar de vez: interrompe e volta ao começo da cifra. */
+  const reiniciar = useCallback(() => {
+    setRolando(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  return { rolando, alternar, parar, reiniciar, iniciar: () => setRolando(true) };
 }

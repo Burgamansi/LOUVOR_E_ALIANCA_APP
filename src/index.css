@@ -99,6 +99,26 @@
   }
 }
 
+/* ── Foco visível ──────────────────────────────────────────────────────────
+ *
+ * Quem navega por teclado (notebook na estante, leitor de tela) precisa ver
+ * onde está. O anel dourado aparece só no foco vindo do teclado
+ * (:focus-visible), nunca no clique — que já tem o próprio retorno visual. */
+:focus-visible {
+  outline: 3px solid #C9A24A;
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* Rolagem suave ao pular para um canto pela navegação rápida. Quem pediu
+ * menos movimento no sistema recebe o salto direto. */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
 /* ── Cifra em duas colunas ─────────────────────────────────────────────────
  *
  * Numa tela de tablet deitado a cifra usava 654 px de 1024 e sobravam 370 em

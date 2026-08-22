@@ -34,6 +34,7 @@ import { BoasVindas } from './components/BoasVindas';
 import { Aviso, useAviso } from './components/Aviso';
 import { MINISTERIO, grupoConfigurado } from './lib/config';
 import { useLocal } from './hooks/useLocal';
+import { usePersistente } from './hooks/usePersistente';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('programacao');
@@ -70,9 +71,10 @@ export default function App() {
   const [celebration, setCelebration] = useState<Celebration>(INITIAL_CELEBRATION);
   const [musicians] = useState<Musician[]>(INITIAL_MUSICIANS);
   // O repertório é do ministério, não preferência de aparelho — mas enquanto
-  // não há banco, o localStorage é o que existe. Sem isto, apagar uma cifra e
-  // reabrir o app trazia todas de volta, e o que era importado sumia.
-  const [songs, setSongs] = useLocal<LiturgicalSong[]>('la:repertorio', INITIAL_SONGS);
+  // não há banco ligado, o localStorage é o que existe. Gravação explícita
+  // (modo manual): cada ação salva e só confirma na tela depois de gravar.
+  const repertorio = usePersistente<LiturgicalSong[]>('la:repertorio', INITIAL_SONGS, { automatico: false });
+  const songs = repertorio.valor;
   // Guardamos o id, não a música inteira: uma cópia guardada envelheceria em
   // relação ao repertório — a cifra seria corrigida e a tela continuaria
   // mostrando a versão antiga. Se o id guardado não existir mais (apagado num
@@ -162,12 +164,15 @@ export default function App() {
   // Grava a cifra importada: substitui quando o id já existe, senão acrescenta.
   // É o mesmo caminho para "importar nova" e "corrigir esta" — uma cifra só por
   // música, sem cópia divergindo do original.
-  const handleSalvarCifra = (song: LiturgicalSong) => {
-    setSongs((prev) =>
-      prev.some((s) => s.id === song.id)
-        ? prev.map((s) => (s.id === song.id ? song : s))
-        : [...prev, song]
-    );
+  const handleSalvarCifra = async (song: LiturgicalSong) => {
+    const lista = songs.some((s) => s.id === song.id)
+      ? songs.map((s) => (s.id === song.id ? song : s))
+      : [...songs, song];
+    const ok = await repertorio.salvar(lista);
+    if (!ok) {
+      mostrarAviso(repertorio.erro ?? `Não foi possível salvar “${song.title}”`, 'erro');
+      return;
+    }
     setSelectedSongId(song.id);
     setCurrentTab('cifras');
     setCifraEmEdicao(null);
@@ -188,12 +193,16 @@ export default function App() {
    * Quem sai da lista sai também de `activeSongIds` e da escala — deixar o id
    * de uma música apagada pendurado ali faz a Programação mostrar um buraco.
    */
-  const handleExcluirCifras = (ids: string[]) => {
+  const handleExcluirCifras = async (ids: string[]) => {
     if (ids.length === 0) return;
     const apagados = new Set(ids);
     const restantes = songs.filter((s) => !apagados.has(s.id));
 
-    setSongs(restantes);
+    const ok = await repertorio.salvar(restantes);
+    if (!ok) {
+      mostrarAviso(repertorio.erro ?? 'Não foi possível excluir', 'erro');
+      return;
+    }
     setActiveSongIds((prev) => prev.filter((id) => !apagados.has(id)));
 
     // Se a que estava aberta foi apagada, abre a primeira que sobrou. Fora do
@@ -211,12 +220,14 @@ export default function App() {
     );
   };
 
-  const handleSalvarVariasCifras = (novas: LiturgicalSong[]) => {
+  const handleSalvarVariasCifras = async (novas: LiturgicalSong[]) => {
     if (novas.length === 0) return;
-    setSongs((prev) => {
-      const ids = new Set(novas.map((n) => n.id));
-      return [...prev.filter((s) => !ids.has(s.id)), ...novas];
-    });
+    const ids = new Set(novas.map((n) => n.id));
+    const ok = await repertorio.salvar([...songs.filter((s) => !ids.has(s.id)), ...novas]);
+    if (!ok) {
+      mostrarAviso(repertorio.erro ?? 'Não foi possível salvar os cantos', 'erro');
+      return;
+    }
     setSelectedSongId(novas[0].id);
     setCurrentTab('cifras');
     setCifraEmEdicao(null);
@@ -326,6 +337,7 @@ export default function App() {
             onSubstituirCifra={(musica) => { setCifraEmEdicao(musica); setIsImportarCifraOpen(true); }}
             onExcluirCifras={handleExcluirCifras}
             onModoPalco={setModoPalco}
+            onAviso={mostrarAviso}
           />
         )}
 
