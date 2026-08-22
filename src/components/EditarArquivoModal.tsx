@@ -1,11 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ArquivoMissa, TipoArquivoMissa } from '../data/missas';
 import { idDoDrive } from '../lib/preview';
-import {
-  validarArquivo, descreverAceitos, limiteLegivel,
-  EXTENSOES_ARQUIVO_MISSA, LIMITE_ARQUIVO_BYTES,
-} from '../lib/upload/validar';
-import type { ResultadoValidacao } from '../lib/upload/validar';
 
 const TIPOS: { valor: TipoArquivoMissa; rotulo: string; icone: string }[] = [
   { valor: 'pdf', rotulo: 'PDF', icone: 'picture_as_pdf' },
@@ -28,7 +23,6 @@ interface EditarArquivoModalProps {
   onRemover?: () => void;
 }
 
-type Fonte = 'drive' | 'local';
 
 const TITULO: Record<ModoEdicao, string> = {
   adicionar: 'Adicionar arquivo',
@@ -39,12 +33,13 @@ const TITULO: Record<ModoEdicao, string> = {
 /**
  * Adicionar, editar ou substituir um arquivo de uma celebração.
  *
- * Duas fontes convivem: o Google Drive (colar o link — o caminho que existe
- * hoje) e o arquivo do computador. A segunda está na tela com a validação
- * completa (tipo, tamanho, nome), mas **não envia**: o app não tem onde
- * guardar bytes — não há servidor de arquivos ligado. Em vez de fingir um
- * upload, a aba diz isso e aponta o caminho que funciona. Quando houver
- * armazenamento, é só a gravação que muda; a tela já está pronta.
+ * O arquivo vem do Google Drive: cola-se o link e o app guarda o id.
+ *
+ * Não há envio do computador, e isso é escolha, não pendência. Guardar os
+ * arquivos aqui exigiria ligar um serviço de armazenamento pago; as projeções
+ * do acervo sozinhas passam de 3 GB, e o Drive já as guarda de graça. O app
+ * aponta para o arquivo em vez de copiá-lo — a versão nova aparece sozinha
+ * quando alguém corrige o documento lá.
  *
  * "Editar dados" mexe só em nome e tipo, sem tocar no arquivo.
  */
@@ -53,21 +48,16 @@ export function EditarArquivoModal({
 }: EditarArquivoModalProps) {
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<TipoArquivoMissa>('pdf');
-  const [fonte, setFonte] = useState<Fonte>('drive');
   const [link, setLink] = useState('');
   const [erro, setErro] = useState<string | null>(null);
-  const [arquivoLocal, setArquivoLocal] = useState<{ nome: string; tamanho: number; validacao: ResultadoValidacao } | null>(null);
   const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
-  const inputArquivo = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!aberto) return;
     setNome(arquivo?.nomeExibicao ?? '');
     setTipo(arquivo?.tipo ?? 'pdf');
-    setFonte('drive');
     setLink(arquivo && modo !== 'substituir' ? `https://drive.google.com/file/d/${arquivo.driveFileId}/view` : '');
     setErro(null);
-    setArquivoLocal(null);
     setConfirmandoRemocao(false);
   }, [aberto, arquivo, modo]);
 
@@ -83,19 +73,6 @@ export function EditarArquivoModal({
   const editandoSoDados = modo === 'dados';
   const idAtual = editandoSoDados ? arquivo?.driveFileId ?? null : idDoDrive(link);
 
-  const receberLocal = (f: File) => {
-    const validacao = validarArquivo(f, { extensoes: EXTENSOES_ARQUIVO_MISSA, limiteBytes: LIMITE_ARQUIVO_BYTES });
-    setArquivoLocal({ nome: validacao.nome, tamanho: f.size, validacao });
-    if (validacao.ok && !nome.trim()) setNome(validacao.nome.replace(/\.[^.]+$/, ''));
-    if (validacao.ok) {
-      const ext = validacao.extensao;
-      if (ext === 'pdf') setTipo('pdf');
-      else if (ext === 'doc' || ext === 'docx') setTipo('docx');
-      else if (ext === 'ppt' || ext === 'pptx') setTipo('pptx');
-    }
-    if (inputArquivo.current) inputArquivo.current.value = '';
-  };
-
   const salvar = () => {
     if (!nome.trim()) {
       setErro('Dê um nome ao arquivo — é o que aparece no cartão da missa.');
@@ -104,11 +81,6 @@ export function EditarArquivoModal({
 
     if (editandoSoDados && arquivo) {
       onSalvar({ ...arquivo, tipo, nomeExibicao: nome.trim() });
-      return;
-    }
-
-    if (fonte === 'local') {
-      setErro('O envio do computador ainda não está disponível — veja a explicação acima. Use o link do Drive.');
       return;
     }
 
@@ -127,7 +99,7 @@ export function EditarArquivoModal({
     });
   };
 
-  const podeSalvar = !salvando && (editandoSoDados || fonte === 'drive');
+  const podeSalvar = !salvando;
 
   return (
     <div className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4">
@@ -197,104 +169,39 @@ export function EditarArquivoModal({
 
           {!editandoSoDados && (
             <>
-              {/* Fonte: Drive ou computador */}
-              <div className="flex flex-col gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">De onde vem o arquivo</span>
-                <div role="tablist" aria-label="Fonte do arquivo" className="flex rounded-xl border border-[#7A2332]/20 overflow-hidden">
-                  {([
-                    { v: 'drive', r: 'Google Drive', i: 'cloud' },
-                    { v: 'local', r: 'Arquivo do computador', i: 'computer' },
-                  ] as { v: Fonte; r: string; i: string }[]).map((o) => (
-                    <button
-                      key={o.v}
-                      role="tab"
-                      aria-selected={fonte === o.v}
-                      onClick={() => { setFonte(o.v); setErro(null); }}
-                      className={`flex-1 px-3 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                        fonte === o.v ? 'bg-[#7A2332] text-[#FFF9F2]' : 'bg-white text-[#5C4A3E] hover:bg-[#7A2332]/5'
-                      }`}
-                    >
-                      <span aria-hidden className="material-symbols-outlined text-base">{o.i}</span>
-                      {o.r}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* O arquivo mora no Google Drive — é de lá que a equipe já
+                  trabalha, e é de lá que o app abre a prévia sem baixar nada.
+                  Não há envio do computador de propósito: guardar os arquivos
+                  aqui exigiria ligar um serviço de armazenamento pago, e as
+                  projeções sozinhas passam de 3 GB. Um botão que não envia
+                  seria pior do que não ter botão. */}
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">
+                  Link do arquivo no Drive
+                </span>
+                <input
+                  value={link}
+                  onChange={(e) => { setLink(e.target.value); setErro(null); }}
+                  placeholder="https://drive.google.com/file/d/…"
+                  className="px-3 py-2.5 rounded-xl border border-[#7A2332]/20 bg-white text-xs font-mono text-[#2D2118] focus:outline-none focus:border-[#7A2332]"
+                />
+                <span className="text-[10px] text-[#5C4A3E] leading-relaxed">
+                  No Drive (site ou pasta do computador), clique com o botão direito no
+                  arquivo: <strong>Compartilhar → Copiar link</strong>. Marque{' '}
+                  <em>“qualquer pessoa com o link”</em>, senão a equipe abre e vê uma tela
+                  de permissão.
+                </span>
+              </label>
 
-              {fonte === 'drive' ? (
-                <>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4A3E]">Link do arquivo no Drive</span>
-                    <input
-                      value={link}
-                      onChange={(e) => { setLink(e.target.value); setErro(null); }}
-                      placeholder="https://drive.google.com/file/d/…"
-                      className="px-3 py-2.5 rounded-xl border border-[#7A2332]/20 bg-white text-xs font-mono text-[#2D2118] focus:outline-none focus:border-[#7A2332]"
-                    />
-                    <span className="text-[10px] text-[#5C4A3E] leading-relaxed">
-                      No Drive: <strong>Compartilhar → Copiar link</strong>. Marque{' '}
-                      <em>“qualquer pessoa com o link”</em>, senão a equipe abre e vê uma tela de permissão.
-                    </span>
-                  </label>
-
-                  <a
-                    href={idAtual ? `https://drive.google.com/file/d/${idAtual}/view` : 'https://drive.google.com/'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#7A2332]/25 text-[#7A2332] text-xs font-bold hover:bg-[#7A2332]/5 transition"
-                  >
-                    <span aria-hidden className="material-symbols-outlined text-lg">open_in_new</span>
-                    {idAtual ? 'Abrir este arquivo no Drive' : 'Abrir o Drive'}
-                  </a>
-                </>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  <input
-                    ref={inputArquivo}
-                    type="file"
-                    accept={EXTENSOES_ARQUIVO_MISSA.map((e) => `.${e}`).join(',')}
-                    className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) receberLocal(f); }}
-                  />
-                  <button
-                    onClick={() => inputArquivo.current?.click()}
-                    className="flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-[#7A2332]/30 text-[#7A2332] text-sm font-bold hover:bg-[#7A2332]/5 transition cursor-pointer"
-                  >
-                    <span aria-hidden className="material-symbols-outlined text-lg">upload_file</span>
-                    Selecionar arquivo
-                  </button>
-                  <p className="text-[10px] text-[#5C4A3E]">
-                    Aceita {descreverAceitos(EXTENSOES_ARQUIVO_MISSA)} até {limiteLegivel(LIMITE_ARQUIVO_BYTES)}.
-                  </p>
-
-                  {arquivoLocal && (
-                    <div
-                      role={arquivoLocal.validacao.ok ? 'status' : 'alert'}
-                      className={`rounded-xl border px-3 py-2.5 text-xs flex items-start gap-2 ${
-                        arquivoLocal.validacao.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-red-50 border-red-200 text-red-800'
-                      }`}
-                    >
-                      <span aria-hidden className="material-symbols-outlined text-base shrink-0">
-                        {arquivoLocal.validacao.ok ? 'check_circle' : 'error'}
-                      </span>
-                      <span>
-                        <strong>{arquivoLocal.nome}</strong> · {limiteLegivel(arquivoLocal.tamanho)}
-                        {arquivoLocal.validacao.ok ? ' — arquivo válido.' : ` — ${arquivoLocal.validacao.erro}`}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex items-start gap-2 bg-amber-50 border border-amber-300 rounded-xl px-3 py-2.5">
-                    <span aria-hidden className="material-symbols-outlined text-amber-700 text-base shrink-0">info</span>
-                    <p className="text-xs text-amber-900 leading-relaxed">
-                      <strong>O envio do computador ainda não está disponível.</strong> O app não tem
-                      onde guardar o arquivo — não há servidor de arquivos ligado. Por enquanto, suba o
-                      arquivo no Google Drive e cole o link na outra aba. Quando o armazenamento estiver
-                      ligado, este botão passa a enviar de verdade.
-                    </p>
-                  </div>
-                </div>
-              )}
+              <a
+                href={idAtual ? `https://drive.google.com/file/d/${idAtual}/view` : 'https://drive.google.com/'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#7A2332]/25 text-[#7A2332] text-xs font-bold hover:bg-[#7A2332]/5 transition"
+              >
+                <span aria-hidden className="material-symbols-outlined text-lg">open_in_new</span>
+                {idAtual ? 'Abrir este arquivo no Drive' : 'Abrir o Drive'}
+              </a>
             </>
           )}
 
