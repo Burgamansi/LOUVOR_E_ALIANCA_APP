@@ -321,7 +321,7 @@ export default function App() {
         )}
 
 
-        {currentTab === 'missas' && <MissasView />}
+        {currentTab === 'missas' && <MissasView onAviso={mostrarAviso} />}
 
         {currentTab === 'links' && <LinksUteisView />}
 

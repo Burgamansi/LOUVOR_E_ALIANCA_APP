@@ -6,7 +6,9 @@ import {
 import type { ArquivoMissa, Missa } from '../data/missas';
 import { VisualizadorDocumento } from './VisualizadorDocumento';
 import { EditarArquivoModal } from './EditarArquivoModal';
-import { useLocal } from '../hooks/useLocal';
+import type { ModoEdicao } from './EditarArquivoModal';
+import { StatusSalvamento } from './StatusSalvamento';
+import { usePersistente } from '../hooks/usePersistente';
 
 const ICONE: Record<ArquivoMissa['tipo'], string> = {
   pdf: 'picture_as_pdf',
@@ -29,6 +31,11 @@ const CORES: Record<Missa['cor'], { fundo: string; texto: string; ponto: string;
 };
 
 const urlDoDrive = (id: string) => `https://drive.google.com/file/d/${id}/view`;
+/** Download direto pelo Drive — o navegador baixa em vez de abrir o visualizador. */
+const urlDeDownload = (id: string) => `https://drive.google.com/uc?export=download&id=${id}`;
+
+const ACAO = 'inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-full text-[11px] font-bold border transition cursor-pointer';
+const ACAO_CLARA = `${ACAO} border-[#7A2332]/25 text-[#7A2332] bg-white hover:bg-[#7A2332]/10`;
 
 /** Sem acento e em minúsculas — para "assunçao", "Assuncao" e "ASSUNÇÃO" acharem a mesma missa. */
 const chave = (t: string) =>
@@ -36,7 +43,12 @@ const chave = (t: string) =>
 
 const TODOS = 'todos';
 
-export function MissasView() {
+interface MissasViewProps {
+  /** Confirmação na tela do que acabou de acontecer — só depois de gravar. */
+  onAviso: (texto: string, tipo?: 'ok' | 'apagou' | 'erro') => void;
+}
+
+export function MissasView({ onAviso }: MissasViewProps) {
   const hoje = useMemo(() => hojeIso(), []);
 
   // O ano de hoje, se o acervo tiver; senão o mais recente que tiver.
@@ -61,25 +73,58 @@ export function MissasView() {
    * diz isso. Sem esse aviso alguém troca o roteiro no celular, vai para a
    * missa achando que a equipe está vendo o mesmo, e não está.
    */
-  const [arquivosLocais, setArquivosLocais] = useLocal<Record<string, ArquivoMissa[]>>(
-    'la:missas-arquivos', {}
+  const arquivos = usePersistente<Record<string, ArquivoMissa[]>>(
+    'la:missas-arquivos', {}, { automatico: false }
   );
+  const arquivosLocais = arquivos.valor;
   const [editando, setEditando] = useState<
-    { missa: Missa; arquivo: ArquivoMissa | null; indice: number } | null
+    { missa: Missa; arquivo: ArquivoMissa | null; indice: number; modo: ModoEdicao } | null
   >(null);
+  const [removendo, setRemovendo] = useState<string | null>(null);   // `${slug}:${indice}`
 
   const arquivosDe = (missa: Missa) => arquivosLocais[missa.slug] ?? missa.arquivos;
   const foiAlterada = (missa: Missa) => arquivosLocais[missa.slug] !== undefined;
 
-  const gravarArquivos = (missa: Missa, lista: ArquivoMissa[]) =>
-    setArquivosLocais((atual) => ({ ...atual, [missa.slug]: lista }));
+  /**
+   * Grava a lista de arquivos de uma missa e só confirma depois de gravar.
+   * Devolve se deu certo — quem chama decide a mensagem.
+   */
+  const gravarArquivos = async (missa: Missa, lista: ArquivoMissa[]): Promise<boolean> => {
+    const ok = await arquivos.salvar({ ...arquivosLocais, [missa.slug]: lista });
+    if (!ok) onAviso(arquivos.erro ?? 'Não foi possível salvar', 'erro');
+    return ok;
+  };
 
-  const voltarAoOriginal = (missa: Missa) =>
-    setArquivosLocais((atual) => {
-      const copia = { ...atual };
-      delete copia[missa.slug];
-      return copia;
-    });
+  const voltarAoOriginal = async (missa: Missa) => {
+    const copia = { ...arquivosLocais };
+    delete copia[missa.slug];
+    const ok = await arquivos.salvar(copia);
+    onAviso(ok ? 'Arquivos originais restaurados' : arquivos.erro ?? 'Não foi possível restaurar', ok ? 'ok' : 'erro');
+  };
+
+  const removerArquivo = async (missa: Missa, indice: number) => {
+    const atual = arquivosDe(missa);
+    const ok = await gravarArquivos(missa, atual.filter((_, i) => i !== indice));
+    setRemovendo(null);
+    if (ok) onAviso('Arquivo removido desta missa', 'apagou');
+  };
+
+  const salvarEdicao = async (novo: ArquivoMissa) => {
+    if (!editando) return;
+    const { missa, indice, modo } = editando;
+    const atual = arquivosDe(missa);
+    const lista = indice < 0 ? [...atual, novo] : atual.map((a, i) => (i === indice ? novo : a));
+    const ok = await gravarArquivos(missa, lista);
+    if (!ok) return;
+    setEditando(null);
+    onAviso(
+      modo === 'adicionar'
+        ? 'Arquivo adicionado e salvo com sucesso'
+        : modo === 'dados'
+          ? 'Dados do arquivo atualizados e salvos'
+          : 'Arquivo atualizado e salvo com sucesso'
+    );
+  };
 
   // Abre sozinha a celebração de hoje — ou a mais próxima dela.
   const [aberta, setAberta] = useState<string | null>(
@@ -307,7 +352,8 @@ export function MissasView() {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-1.5">
+                            {/* Ações com nome e tooltip — nada escondido só num ícone. */}
+                            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={`Ações de ${arq.nomeExibicao}`}>
                               <button
                                 onClick={() =>
                                   setPreview({
@@ -318,27 +364,70 @@ export function MissasView() {
                                     id: arq.driveFileId,
                                   })
                                 }
-                                className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-full bg-[#7A2332] text-[#FFF9F2] hover:brightness-110 transition cursor-pointer"
+                                aria-label={`Ver ${arq.nomeExibicao}`}
+                                title="Ver aqui mesmo, sem baixar"
+                                className={`${ACAO} border-[#7A2332] bg-[#7A2332] text-[#FFF9F2] hover:brightness-110`}
                               >
                                 <span aria-hidden className="material-symbols-outlined text-sm">visibility</span>
                                 Ver
                               </button>
+                              <button
+                                onClick={() => setEditando({ missa, arquivo: arq, indice: iArq, modo: 'dados' })}
+                                aria-label={`Editar nome e tipo de ${arq.nomeExibicao}`}
+                                title="Editar nome e tipo"
+                                className={ACAO_CLARA}
+                              >
+                                <span aria-hidden className="material-symbols-outlined text-sm">edit</span>
+                                Editar dados
+                              </button>
+                              <button
+                                onClick={() => setEditando({ missa, arquivo: arq, indice: iArq, modo: 'substituir' })}
+                                aria-label={`Substituir o arquivo ${arq.nomeExibicao}`}
+                                title="Substituir por outro arquivo (Drive ou computador)"
+                                className={ACAO_CLARA}
+                              >
+                                <span aria-hidden className="material-symbols-outlined text-sm">swap_horiz</span>
+                                Substituir
+                              </button>
+                              <a
+                                href={urlDeDownload(arq.driveFileId)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Baixar ${arq.nomeExibicao}`}
+                                title="Baixar o arquivo"
+                                className={ACAO_CLARA}
+                              >
+                                <span aria-hidden className="material-symbols-outlined text-sm">download</span>
+                                Download
+                              </a>
                               <a
                                 href={urlDoDrive(arq.driveFileId)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                aria-label={`Abrir ${arq.nomeExibicao} no Drive`}
-                                className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-[#7A2332]/25 text-[#7A2332] hover:bg-[#7A2332]/10 transition"
+                                aria-label={`Abrir ${arq.nomeExibicao} no Google Drive`}
+                                title="Abrir no Google Drive"
+                                className={ACAO_CLARA}
                               >
                                 <span aria-hidden className="material-symbols-outlined text-sm">open_in_new</span>
+                                Drive
                               </a>
                               <button
-                                onClick={() => setEditando({ missa, arquivo: arq, indice: iArq })}
-                                aria-label={`Trocar ou remover ${arq.nomeExibicao}`}
-                                title="Trocar ou remover"
-                                className="w-8 h-8 inline-flex items-center justify-center rounded-full border border-[#7A2332]/25 text-[#7A2332] hover:bg-[#7A2332]/10 transition cursor-pointer"
+                                onClick={() => {
+                                  const chave = `${missa.slug}:${iArq}`;
+                                  if (removendo === chave) void removerArquivo(missa, iArq);
+                                  else setRemovendo(chave);
+                                }}
+                                onBlur={() => setRemovendo((r) => (r === `${missa.slug}:${iArq}` ? null : r))}
+                                aria-label={removendo === `${missa.slug}:${iArq}` ? `Confirmar a remoção de ${arq.nomeExibicao}` : `Remover ${arq.nomeExibicao} desta missa`}
+                                title="Remover desta missa"
+                                className={`${ACAO} ${
+                                  removendo === `${missa.slug}:${iArq}`
+                                    ? 'border-red-600 bg-red-600 text-white'
+                                    : 'border-[#7A2332]/25 text-[#5C4A3E] bg-white hover:text-red-700 hover:border-red-300'
+                                }`}
                               >
-                                <span aria-hidden className="material-symbols-outlined text-sm">edit</span>
+                                <span aria-hidden className="material-symbols-outlined text-sm">delete</span>
+                                {removendo === `${missa.slug}:${iArq}` ? 'Remover?' : 'Remover'}
                               </button>
                             </div>
                           </div>
@@ -352,21 +441,27 @@ export function MissasView() {
                         esperar um deploy. */}
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <button
-                        onClick={() => setEditando({ missa, arquivo: null, indice: -1 })}
+                        onClick={() => setEditando({ missa, arquivo: null, indice: -1, modo: 'adicionar' })}
+                        title="Adicionar um arquivo do Drive ou do computador"
                         className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full border border-dashed border-[#7A2332]/30 text-[#7A2332] hover:bg-[#7A2332]/5 transition cursor-pointer"
                       >
                         <span aria-hidden className="material-symbols-outlined text-base">add</span>
                         Adicionar arquivo
                       </button>
 
+                      <StatusSalvamento status={arquivos.status} erro={arquivos.erro} textoSalvo="Salvo" />
+
                       {foiAlterada(missa) && (
                         <>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#C9A24A]/20 text-[#7A2332]">
+                          <span
+                            className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#C9A24A]/20 text-[#7A2332]"
+                            title="Estas alterações estão gravadas só neste aparelho; a equipe não as vê ainda."
+                          >
                             <span aria-hidden className="material-symbols-outlined text-sm">smartphone</span>
                             alterado neste aparelho
                           </span>
                           <button
-                            onClick={() => voltarAoOriginal(missa)}
+                            onClick={() => void voltarAoOriginal(missa)}
                             className="text-[11px] font-bold text-[#5C4A3E] hover:text-[#7A2332] underline decoration-dotted cursor-pointer"
                           >
                             voltar ao original
@@ -384,26 +479,17 @@ export function MissasView() {
 
       <EditarArquivoModal
         aberto={editando !== null}
+        modo={editando?.modo ?? 'adicionar'}
         arquivo={editando?.arquivo ?? null}
         tituloMissa={editando ? `${editando.missa.tituloLiturgico} · ${dataPorExtenso(editando.missa.data)}` : ''}
+        salvando={arquivos.status === 'salvando'}
         onFechar={() => setEditando(null)}
-        onSalvar={(novo) => {
-          if (!editando) return;
-          const atual = arquivosDe(editando.missa);
-          gravarArquivos(
-            editando.missa,
-            editando.indice < 0
-              ? [...atual, novo]
-              : atual.map((a, i) => (i === editando.indice ? novo : a))
-          );
-          setEditando(null);
-        }}
+        onSalvar={(novo) => void salvarEdicao(novo)}
         onRemover={
           editando?.arquivo
             ? () => {
-                const atual = arquivosDe(editando.missa);
-                gravarArquivos(editando.missa, atual.filter((_, i) => i !== editando.indice));
-                setEditando(null);
+                const { missa, indice } = editando;
+                void removerArquivo(missa, indice).then(() => setEditando(null));
               }
             : undefined
         }
