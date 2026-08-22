@@ -89,14 +89,18 @@ try {
 
     console.log(`\n${caminho}`);
 
-    await cliente.executeMultiple(resto);
-    console.log(`  estrutura e inserções aplicadas`);
-
+    // As colunas vem PRIMEIRO: o resto do arquivo as usa. A 0003 cria
+    // `idx_musicas_youtube` sobre `youtube_id`, que e justamente uma das
+    // colunas adicionadas aqui — na ordem inversa, o indice nao acha a coluna.
     for (const alter of alters) {
       const coluna = /ADD COLUMN (\w+)/.exec(alter)?.[1] ?? '?';
       const estado = await adicionarColuna(cliente, alter);
       console.log(`  coluna ${coluna}: ${estado}`);
     }
+
+    await cliente.executeMultiple(resto);
+    console.log(`  estrutura e inserções aplicadas`);
+
   }
 
   const { rows } = await cliente.execute(
@@ -115,7 +119,7 @@ try {
   for (const [chave, valor] of Object.entries(rows[0])) {
     console.log(`  ${chave.padEnd(16)} ${valor}`);
   }
-  console.log('\nEsperado: 13 celebrações, 12 na agenda pública, 34 arquivos, 5 pessoas, 60 escalas.\n');
+  console.log('\nEsperado: 13 celebrações, 12 na agenda pública, 33 arquivos, 5 pessoas, 60 escalas.\n');
 } finally {
   cliente.close();
 }
