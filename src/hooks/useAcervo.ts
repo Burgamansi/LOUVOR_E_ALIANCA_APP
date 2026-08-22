@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { MISSAS } from '../data/missas';
 import type { Missa } from '../data/missas';
 import { mesclar } from '../lib/acervo/mesclar';
@@ -21,6 +21,12 @@ export type OrigemDoAcervo = 'embarcado' | 'banco' | 'falhou';
 export function useAcervo() {
   const [missas, setMissas] = useState<Missa[]>(MISSAS);
   const [origem, setOrigem] = useState<OrigemDoAcervo>('embarcado');
+  // Mudar este número refaz a busca. É como a tela pede o acervo de volta
+  // depois de gravar uma troca de arquivo: sem isso, ela mostraria o que
+  // buscou ao abrir, e a alteração recém-gravada só apareceria no F5.
+  const [pedido, setPedido] = useState(0);
+
+  const recarregar = useCallback(() => setPedido((n) => n + 1), []);
 
   useEffect(() => {
     // Uma requisição que ficou pendente quando a tela saiu não deve escrever
@@ -49,7 +55,7 @@ export function useAcervo() {
     })();
 
     return () => controle.abort();
-  }, []);
+  }, [pedido]);
 
-  return { missas, origem };
+  return { missas, origem, recarregar };
 }

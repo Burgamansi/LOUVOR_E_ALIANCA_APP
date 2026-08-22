@@ -10,6 +10,7 @@ import type { ModoEdicao } from './EditarArquivoModal';
 import { StatusSalvamento } from './StatusSalvamento';
 import { usePersistente } from '../hooks/usePersistente';
 import { useAcervo } from '../hooks/useAcervo';
+import { gravarArquivosNoBanco } from '../lib/acervo/gravar';
 
 const ICONE: Record<ArquivoMissa['tipo'], string> = {
   pdf: 'picture_as_pdf',
@@ -53,7 +54,7 @@ export function MissasView({ onAviso }: MissasViewProps) {
   const hoje = useMemo(() => hojeIso(), []);
 
   // O acervo: embarcado no primeiro quadro, do banco quando ele responder.
-  const { missas: acervo, origem } = useAcervo();
+  const { missas: acervo, origem, recarregar } = useAcervo();
 
   const anos = useMemo(() => anosDoAcervo(acervo), [acervo]);
 
@@ -95,10 +96,38 @@ export function MissasView({ onAviso }: MissasViewProps) {
    * Grava a lista de arquivos de uma missa e só confirma depois de gravar.
    * Devolve se deu certo — quem chama decide a mensagem.
    */
-  const gravarArquivos = async (missa: Missa, lista: ArquivoMissa[]): Promise<boolean> => {
+  type Onde = 'equipe' | 'aparelho' | 'falhou';
+
+  const gravarArquivos = async (missa: Missa, lista: ArquivoMissa[]): Promise<Onde> => {
+    // Primeiro o banco: é lá que a equipe inteira lê. Dando certo, o desvio
+    // guardado neste aparelho deixa de fazer sentido e sai — senão ele
+    // continuaria por cima do que o banco passou a dizer.
+    const noBanco = await gravarArquivosNoBanco(missa.slug, lista);
+
+    if (noBanco.ok) {
+      const semDesvio = { ...arquivosLocais };
+      delete semDesvio[missa.slug];
+      await arquivos.salvar(semDesvio);
+      recarregar();
+      return 'equipe';
+    }
+
+    // O banco recusou por conteúdo — tipo inválido, missa inexistente.
+    // Guardar no aparelho não conserta isso; é erro para corrigir e tentar
+    // de novo.
+    if (!/conexão/i.test(noBanco.motivo)) {
+      onAviso(noBanco.motivo, 'erro');
+      return 'falhou';
+    }
+
+    // Sem rede. O aparelho ainda serve: grava aqui e a tela passa a mostrar
+    // o selo "alterado neste aparelho", que é a verdade.
     const ok = await arquivos.salvar({ ...arquivosLocais, [missa.slug]: lista });
-    if (!ok) onAviso(arquivos.erro ?? 'Não foi possível salvar', 'erro');
-    return ok;
+    if (!ok) {
+      onAviso(arquivos.erro ?? 'Não foi possível salvar', 'erro');
+      return 'falhou';
+    }
+    return 'aparelho';
   };
 
   const voltarAoOriginal = async (missa: Missa) => {
@@ -110,9 +139,10 @@ export function MissasView({ onAviso }: MissasViewProps) {
 
   const removerArquivo = async (missa: Missa, indice: number) => {
     const atual = arquivosDe(missa);
-    const ok = await gravarArquivos(missa, atual.filter((_, i) => i !== indice));
+    const onde = await gravarArquivos(missa, atual.filter((_, i) => i !== indice));
     setRemovendo(null);
-    if (ok) onAviso('Arquivo removido desta missa', 'apagou');
+    if (onde === 'equipe') onAviso('Arquivo removido — a equipe já não o vê', 'apagou');
+    else if (onde === 'aparelho') onAviso('Sem conexão: removido só neste aparelho', 'erro');
   };
 
   const salvarEdicao = async (novo: ArquivoMissa) => {
@@ -120,15 +150,23 @@ export function MissasView({ onAviso }: MissasViewProps) {
     const { missa, indice, modo } = editando;
     const atual = arquivosDe(missa);
     const lista = indice < 0 ? [...atual, novo] : atual.map((a, i) => (i === indice ? novo : a));
-    const ok = await gravarArquivos(missa, lista);
-    if (!ok) return;
+    const onde = await gravarArquivos(missa, lista);
+    if (onde === 'falhou') return;
     setEditando(null);
+
+    if (onde === 'aparelho') {
+      onAviso('Sem conexão — salvo só neste aparelho, a equipe ainda não vê', 'erro');
+      return;
+    }
+
+    // Gravou no banco: dizer "para a equipe" não é enfeite. É a informação
+    // que a pessoa precisa para saber se pode parar de se preocupar.
     onAviso(
       modo === 'adicionar'
-        ? 'Arquivo adicionado e salvo com sucesso'
+        ? 'Arquivo adicionado — a equipe já está vendo'
         : modo === 'dados'
-          ? 'Dados do arquivo atualizados e salvos'
-          : 'Arquivo atualizado e salvo com sucesso'
+          ? 'Dados atualizados — a equipe já está vendo'
+          : 'Arquivo substituído — a equipe já está vendo'
     );
   };
 
