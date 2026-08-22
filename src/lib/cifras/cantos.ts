@@ -18,8 +18,9 @@
 // viraria a coda do canto anterior. Cortando antes, a linha do momento é
 // consumida como fronteira e nunca chega ao parser.
 
-import { analisarCifra, deduzirTom, ehLinhaDeAcordes } from './parser';
+import { analisarCifra, deduzirTom, ehLinhaDeAcordes, lerMarcadorDeRevisao } from './parser';
 import { ehAcorde, ehSimboloNeutro } from './acordes';
+import { linhasParaRevisar } from './tipos';
 
 /** Os momentos da missa, na ordem em que acontecem. */
 export const MOMENTOS_LITURGICOS = [
@@ -52,6 +53,8 @@ export interface CantoDetectado {
   linhaInicial: number;
   /** 'alta' quando veio de um rótulo de momento; 'media' quando foi deduzido. */
   confianca: 'alta' | 'media';
+  /** Linhas deste canto que o parser marcou como REVISÃO NECESSÁRIA. */
+  paraRevisar: number;
 }
 
 const semAcento = (t: string) =>
@@ -86,8 +89,10 @@ export function lerCabecalhoDeMomento(linha: string): { momento: string | null; 
   if (!cru || cru.length > 60) return null;
 
   // [Final] entre colchetes é marcação de seção da música, não momento da
-  // missa. Quem escreve o momento não usa colchete.
+  // missa. Quem escreve o momento não usa colchete. E a linha marcada para
+  // revisão nunca é fronteira: não sabemos o que ela é.
   if (/^\[.*\]$/.test(cru)) return null;
+  if (lerMarcadorDeRevisao(cru) !== null) return null;
   if (ehLinhaDeAcordes(cru)) return null;
 
   // Tira numeração e enfeites: "1 - ", "2. ", "•", "*ENTRADA*", "== SANTO =="
@@ -168,6 +173,7 @@ function primeiraLinhaDeLetra(linhas: string[]): string {
     if (!t) continue;
     if (ehLinhaDeAcordes(t)) continue;
     if (/^\[.*\]$/.test(t)) continue;
+    if (lerMarcadorDeRevisao(t) !== null) continue;   // trecho incerto não dá nome
 
     const semRotulo = t.replace(/^(intro|introdu[çc][ãa]o|solo|final|coda|ponte)\s*:?\s*/i, '');
     const pedacos = semRotulo.split(/\s+/).filter(Boolean);
@@ -208,6 +214,7 @@ function montarCanto(
     tomSugerido: deduzirTom(cifra),
     linhaInicial,
     confianca,
+    paraRevisar: linhasParaRevisar(cifra),
   };
 }
 

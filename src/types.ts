@@ -22,9 +22,32 @@ export interface LiturgicalSong {
   part: string; // ENTRADA, ATO PENITENCIAL, GLÓRIA, SALMO, ACLAMAÇÃO, OFERTÓRIO, SANTO, CORDEIRO, COMUNHÃO, PÓS-COMUNHÃO, FINAL
   number: number;
   title: string;
+  /**
+   * O TOM ORIGINAL — aquele em que a cifra foi escrita. Nunca muda com a
+   * transposição: o tom em que a equipe toca fica guardado à parte, como um
+   * deslocamento em semitons sobre este.
+   */
   key: string;
   lyricsPreview: string;
+  /**
+   * A cifra como texto, acordes sobre a letra. É a forma persistida; o JSON
+   * com âncoras (src/lib/cifras/tipos.ts) é derivado dela na renderização.
+   * Linhas que começam com "[REVISÃO NECESSÁRIA]" são trechos que o
+   * importador não reconheceu e que a pessoa ainda não corrigiu.
+   */
   fullChordText: string;
+  /**
+   * O documento de onde este canto veio, quando veio de um arquivo com vários
+   * cantos (a missa inteira). É o que permite abrir "o documento inteiro" e
+   * navegar entre os cantos na ordem do arquivo.
+   */
+  documentoId?: string;
+  documentoTitulo?: string;
+  ordemNoDocumento?: number;
+  /** Origem da cifra: 'docx' | 'pdf' | 'imagem' | 'txt' | 'colado' | 'manual'. */
+  origem?: string;
+  /** Falso enquanto houver trecho marcado para revisão que ninguém conferiu. */
+  revisada?: boolean;
   youtubeUrl?: string;
   season?: string;
   author?: string;

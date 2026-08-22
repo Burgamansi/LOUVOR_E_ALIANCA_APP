@@ -5,6 +5,8 @@ interface ControleVelocidadeProps {
   velocidade: number;
   onVelocidade: (v: number) => void;
   onAlternar: () => void;
+  /** Parar de vez e voltar ao começo da cifra. */
+  onReiniciar: () => void;
   onFechar: () => void;
   /** Sobe a barra para não cobrir a navegação inferior no celular. */
   acimaDaNavegacao?: boolean;
@@ -19,35 +21,40 @@ const MAX = DEGRAUS_VELOCIDADE.length;
  * instrumento na mão, e olha para isto por meio segundo.
  *
  *  · **Play/pause é o maior alvo da barra.** É o que se aperta no meio do
- *    verso quando o padre resolve falar. 56 px, canto esquerdo, sempre no
+ *    verso quando o padre resolve falar. 48 px, canto esquerdo, sempre no
  *    mesmo lugar — não muda de posição quando o estado muda.
+ *  · **Parar é diferente de pausar.** Pausar segura onde está; parar volta ao
+ *    começo — para a próxima música, ou para recomeçar o ensaio.
  *  · **A velocidade tem duas formas de ajuste.** Os botões −/+ são para o
  *    ajuste fino com o polegar sem olhar; o slider é para saltar de "bem
- *    lento" para "rápido" de uma vez. Quem usa luva de palco ou tem a mão
- *    ocupada usa os botões; quem está sentado ensaiando usa o slider.
- *  · **O número tem nome.** "6" não diz nada; "6 · Moderado" diz. O degrau
- *    aparece junto porque é o que se combina entre músicos ("põe no 4").
+ *    lento" para "rápido" de uma vez.
+ *  · **O número tem nome.** "6" não diz nada; "6 · Moderado" diz.
  *
  * Ajustar a velocidade não interrompe a rolagem: o novo valor entra no próximo
  * quadro, sem solavanco.
  */
 export function ControleVelocidade({
-  rolando, velocidade, onVelocidade, onAlternar, onFechar, acimaDaNavegacao = true,
+  rolando, velocidade, onVelocidade, onAlternar, onReiniciar, onFechar, acimaDaNavegacao = true,
 }: ControleVelocidadeProps) {
   const mudar = (delta: number) =>
     onVelocidade(Math.min(Math.max(velocidade + delta, 1), MAX));
 
   return (
     <div
-      className={`fixed inset-x-0 z-40 px-3 pointer-events-none ${
+      className={`fixed inset-x-0 z-40 px-3 pointer-events-none print:hidden ${
         acimaDaNavegacao ? 'bottom-20 md:bottom-6' : 'bottom-4'
       }`}
     >
-      <div className="pointer-events-auto mx-auto max-w-md flex items-center gap-2 rounded-full bg-[#4D1721] text-[#FFF9F2] shadow-2xl shadow-black/30 border border-[#C9A24A]/30 pl-2 pr-3 py-2">
+      <div
+        role="group"
+        aria-label="Rolagem automática"
+        className="pointer-events-auto mx-auto max-w-md flex items-center gap-2 rounded-full bg-[#4D1721] text-[#FFF9F2] shadow-2xl shadow-black/30 border border-[#C9A24A]/30 pl-2 pr-3 py-2"
+      >
         {/* Play / pause */}
         <button
           onClick={onAlternar}
           aria-label={rolando ? 'Pausar rolagem' : 'Iniciar rolagem'}
+          title={rolando ? 'Pausar (espaço)' : 'Iniciar (espaço)'}
           className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer ${
             rolando ? 'bg-[#C9A24A] text-[#4D1721]' : 'bg-[#FFF9F2] text-[#7A2332]'
           }`}
@@ -55,6 +62,16 @@ export function ControleVelocidade({
           <span aria-hidden className="material-symbols-outlined text-2xl">
             {rolando ? 'pause' : 'play_arrow'}
           </span>
+        </button>
+
+        {/* Parar: volta ao início */}
+        <button
+          onClick={onReiniciar}
+          aria-label="Parar a rolagem e voltar ao começo"
+          title="Parar e voltar ao começo"
+          className="shrink-0 w-9 h-9 rounded-full border border-[#FFF9F2]/30 flex items-center justify-center hover:bg-white/10 transition cursor-pointer"
+        >
+          <span aria-hidden className="material-symbols-outlined text-lg">stop</span>
         </button>
 
         {/* Ajuste fino + slider */}
@@ -73,6 +90,7 @@ export function ControleVelocidade({
               onClick={() => mudar(-1)}
               disabled={velocidade <= 1}
               aria-label="Diminuir a velocidade"
+              title="Mais devagar (↓)"
               className="shrink-0 w-7 h-7 rounded-full border border-[#FFF9F2]/30 flex items-center justify-center disabled:opacity-30 hover:bg-white/10 transition cursor-pointer"
             >
               <span aria-hidden className="material-symbols-outlined text-base">remove</span>
@@ -94,6 +112,7 @@ export function ControleVelocidade({
               onClick={() => mudar(1)}
               disabled={velocidade >= MAX}
               aria-label="Aumentar a velocidade"
+              title="Mais rápido (↑)"
               className="shrink-0 w-7 h-7 rounded-full border border-[#FFF9F2]/30 flex items-center justify-center disabled:opacity-30 hover:bg-white/10 transition cursor-pointer"
             >
               <span aria-hidden className="material-symbols-outlined text-base">add</span>
@@ -104,6 +123,7 @@ export function ControleVelocidade({
         <button
           onClick={onFechar}
           aria-label="Fechar o controle de rolagem"
+          title="Fechar"
           className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition cursor-pointer"
         >
           <span aria-hidden className="material-symbols-outlined text-lg">close</span>
@@ -114,7 +134,9 @@ export function ControleVelocidade({
           num botão de 12 px com o mouse. Escondido no celular, onde não existe. */}
       <p className="hidden md:block text-center text-[10px] text-[#5C4A3E] mt-1.5 pointer-events-none">
         <kbd className="font-bold">espaço</kbd> toca ou pausa ·
-        <kbd className="font-bold"> ↑ ↓ </kbd> ajustam a velocidade
+        <kbd className="font-bold"> ↑ ↓ </kbd> ajustam a velocidade ·
+        <kbd className="font-bold"> + − </kbd> mudam o tom ·
+        <kbd className="font-bold"> Ctrl+S </kbd> salva o tom
       </p>
     </div>
   );
